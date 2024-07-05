@@ -1,3 +1,5 @@
+import time
+
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
@@ -29,9 +31,11 @@ def discover_target():
                 paths.append(parsed_link.path)
 
         sites.append(site)
+        # sleep for a bit
+        time.sleep(1)
 
     config.logger.info(f"Done discovering website: {config.website}")
-    
+
     for site in sites:
         print(f"Site: {site}")
 
@@ -40,13 +44,19 @@ def discover_target():
 
 def discover_path(driver, path):
     """
-    Discover the given path.
+    Discover the given path. Create a site object.
     """
     config.logger.debug(f"Discovering path: {path}")
-    driver.get(f"{config.target}/{path}")
+    driver.get(f"{config.target}{path}")
     soup = BeautifulSoup(driver.page_source, "html.parser")
 
-    site = {"path": path, "out_links": parse_links(soup), "interactions": []}
+    # TODO: Create the site object
+    site = {
+        "path": path,
+        "summary": "",
+        "out_links": parse_links(soup),
+        "interactions": [],
+    }
     return site
 
 
@@ -58,3 +68,8 @@ def parse_links(soup):
     for link in soup.find_all("a"):
         links.append(link.get("href"))
     return links
+
+def create_summary(soup):
+    """
+    Create a summary of the given soup, using LLM.
+    """

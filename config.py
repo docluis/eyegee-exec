@@ -1,5 +1,8 @@
 import logging
 from urllib.parse import urlparse
+from dotenv import load_dotenv # type: ignore
+
+load_dotenv()
 
 # Configuration for logging
 logging.basicConfig(
