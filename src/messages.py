@@ -5,7 +5,7 @@ Focus on the main funcionality of the page.
 
 interaction_system_message = """
 Your task is to parse the interactions on the provided webpage. Interactions are any ways a user can submit information to the website, including but not limited to buttons, forms, and other JavaScript interactive elements. Do not include links or other static elements.
-Return the interactions in JSON format, where each interaction has the following attributes:
+Return the interactions in raw JSON format, where each interaction has the following attributes:
 
 name: A descriptive name for the interaction.
 description: A brief description of the interaction's function.
@@ -33,4 +33,7 @@ Example Output:
         ]
     }
 ]
+
+Return an empty list if no interactions are found. Do not include markdown backticks in your output.
+Make sure to not make assumptions about the website's functionality. Only include interactions that are present on the page.
 """
