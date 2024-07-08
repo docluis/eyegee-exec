@@ -16,46 +16,53 @@ def discover_target():
     service = webdriver.FirefoxService(executable_path="/usr/bin/geckodriver")
     driver = webdriver.Firefox(service=service)
 
-    paths = [cf.initial_path]
+    paths_to_visit = [cf.initial_path]
     paths_visited = []
 
     sites = []
-    while paths:
+    sites_hashes = []
+    while paths_to_visit:
         # DEBUG
         if len(sites) > 2:
             break
         # DEBUG
-        path = paths.pop(0)
-        paths_visited.append(path)
+        path = paths_to_visit.pop(0)
+        cf.logger.debug(f"Discovering path: {path}")
 
-        site = discover_path(driver, path)
+        driver.get(f"{cf.target}{path}")
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+        paths_visited.append(path)
+        site_hash = hash(soup)
+        if site_hash in sites_hashes:  # Already visited this site
+            cf.logger.debug(f"Already visited path: {path}")
+            continue
+        sites_hashes.append(site_hash)
+        site = analyze_soup(path, soup)
         for link in site["out_links"]:
             if link is None:
                 continue
             parsed_link = urlparse(link)
-            if parsed_link.path not in paths and parsed_link.path not in paths_visited:
-                paths.append(parsed_link.path)
+            if (
+                parsed_link.path not in paths_to_visit
+                and parsed_link.path not in paths_visited
+            ):
+                paths_to_visit.append(parsed_link.path)
 
         sites.append(site)
         # sleep for a bit
         time.sleep(1)
 
     cf.logger.info(f"Done discovering website: {cf.website}")
-
-    # for site in sites:
-    #     print(f"Site: {site}")
+    
     output_sites_to_file(sites)
 
     driver.quit()
 
 
-def discover_path(driver, path):
+def analyze_soup(path, soup):
     """
     Discover the given path. Create a site object.
     """
-    cf.logger.debug(f"Discovering path: {path}")
-    driver.get(f"{cf.target}{path}")
-    soup = BeautifulSoup(driver.page_source, "html.parser")
 
     # TODO: Create the site object
     site = {
