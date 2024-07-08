@@ -4,7 +4,9 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
-import config
+from src.llm import llm_create_summary, llm_parse_interactions
+
+import config as cf
 
 
 def discover_target():
@@ -14,11 +16,15 @@ def discover_target():
     service = webdriver.FirefoxService(executable_path="/usr/bin/geckodriver")
     driver = webdriver.Firefox(service=service)
 
-    paths = [config.initial_path]
+    paths = [cf.initial_path]
     paths_visited = []
 
     sites = []
     while paths:
+        # DEBUG
+        if len(sites) > 2:
+            break
+        # DEBUG
         path = paths.pop(0)
         paths_visited.append(path)
 
@@ -34,10 +40,11 @@ def discover_target():
         # sleep for a bit
         time.sleep(1)
 
-    config.logger.info(f"Done discovering website: {config.website}")
+    cf.logger.info(f"Done discovering website: {cf.website}")
 
-    for site in sites:
-        print(f"Site: {site}")
+    # for site in sites:
+    #     print(f"Site: {site}")
+    output_sites_to_file(sites)
 
     driver.quit()
 
@@ -46,16 +53,16 @@ def discover_path(driver, path):
     """
     Discover the given path. Create a site object.
     """
-    config.logger.debug(f"Discovering path: {path}")
-    driver.get(f"{config.target}{path}")
+    cf.logger.debug(f"Discovering path: {path}")
+    driver.get(f"{cf.target}{path}")
     soup = BeautifulSoup(driver.page_source, "html.parser")
 
     # TODO: Create the site object
     site = {
         "path": path,
-        "summary": "",
+        "summary": llm_create_summary(soup),
         "out_links": parse_links(soup),
-        "interactions": [],
+        "interactions": llm_parse_interactions(soup),
     }
     return site
 
@@ -69,7 +76,18 @@ def parse_links(soup):
         links.append(link.get("href"))
     return links
 
-def create_summary(soup):
+
+def output_sites_to_file(sites):
     """
-    Create a summary of the given soup, using LLM.
+    Output the given sites to a file.
     """
+    with open("output.txt", "w") as file:
+        for site in sites:
+            output = f"""
+Path: {site['path']}
+Out Links: {site['out_links']}
+Summary: {site['summary']}
+Interactions: {site['interactions']}
+----------------------------------------\n\n
+"""
+            file.write(output)
