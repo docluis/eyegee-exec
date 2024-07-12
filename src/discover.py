@@ -1,10 +1,11 @@
+import subprocess
 import time
 
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
-from src.llm import llm_create_summary, llm_parse_interactions
+from src.llm import llm_create_summary, llm_parse_apis, llm_parse_interactions
 
 import config as cf
 
@@ -13,8 +14,9 @@ def discover_target():
     """
     Discover the given URL.
     """
+    options = webdriver.FirefoxOptions()
     service = webdriver.FirefoxService(executable_path="/usr/bin/geckodriver")
-    driver = webdriver.Firefox(service=service)
+    driver = webdriver.Firefox(service=service, options=options)
 
     paths_to_visit = [cf.initial_path]
     paths_visited = []
@@ -30,15 +32,18 @@ def discover_target():
         cf.logger.debug(f"Discovering path: {path}")
 
         driver.get(f"{cf.target}{path}")
+        # print(driver.get_log("browser"))
+        logs = []
+
         soup = BeautifulSoup(driver.page_source, "html.parser")
         paths_visited.append(path)
         site_hash = hash(soup)
-        if site_hash in sites_hashes:  # Already visited this site
+        if site_hash in sites_hashes:  # Already visited this page
             cf.logger.debug(f"Already visited path: {path}")
             continue
         sites_hashes.append(site_hash)
-        site = analyze_soup(path, soup)
-        for link in site["out_links"]:
+        page = analyze_page(path, soup, logs)
+        for link in page["out_links"]:
             if link is None:
                 continue
             parsed_link = urlparse(link)
@@ -48,30 +53,31 @@ def discover_target():
             ):
                 paths_to_visit.append(parsed_link.path)
 
-        sites.append(site)
+        sites.append(page)
         # sleep for a bit
         time.sleep(1)
 
     cf.logger.info(f"Done discovering website: {cf.website}")
-    
+
     output_sites_to_file(sites)
 
     driver.quit()
 
 
-def analyze_soup(path, soup):
+def analyze_page(path, soup, logs):
     """
-    Discover the given path. Create a site object.
+    Discover the given path. Create a page object.
     """
 
-    # TODO: Create the site object
-    site = {
+    # TODO: Create the page object
+    page = {
         "path": path,
         "summary": llm_create_summary(soup),
         "out_links": parse_links(soup),
         "interactions": llm_parse_interactions(soup),
+        "apis_called": llm_parse_apis(logs),
     }
-    return site
+    return page
 
 
 def parse_links(soup):
@@ -89,12 +95,12 @@ def output_sites_to_file(sites):
     Output the given sites to a file.
     """
     with open("output.txt", "w") as file:
-        for site in sites:
+        for page in sites:
             output = f"""
-Path: {site['path']}
-Out Links: {site['out_links']}
-Summary: {site['summary']}
-Interactions: {site['interactions']}
+Path: {page['path']}
+Out Links: {page['out_links']}
+Summary: {page['summary']}
+Interactions: {page['interactions']}
 ----------------------------------------\n\n
 """
             file.write(output)

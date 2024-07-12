@@ -30,3 +30,18 @@ def llm_parse_interactions(soup):
     ]
     interactions = chain.invoke(messages)
     return interactions
+
+def llm_parse_apis(logs):
+    """
+    Parse the APIs called from the given logs, using LLM.
+    """
+    # chain = cf.model | cf.parser
+    # cf.logger.debug("Parsing APIs")
+    # messages = [
+    #     SystemMessage(msg.api_system_message),
+    #     HumanMessage(logs),
+    # ]
+    # apis = chain.invoke(messages)
+    # return apis
+    print(logs)
+    return []

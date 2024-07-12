@@ -1,6 +1,6 @@
 summary_system_message = """
 Create a short and consice summary of the given webpage.
-Focus on the main funcionality of the page.
+Focus on the main funcionality of the page. Ignore boilerplate elements and code.
 """
 
 interaction_system_message = """
