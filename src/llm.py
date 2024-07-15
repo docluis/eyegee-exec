@@ -1,3 +1,4 @@
+import json
 from langchain_core.messages import HumanMessage, SystemMessage
 
 import config as cf
@@ -31,17 +32,16 @@ def llm_parse_interactions(soup):
     interactions = chain.invoke(messages)
     return interactions
 
-def llm_parse_apis(logs):
+def llm_parse_requests_for_apis(page_requests):
     """
-    Parse the APIs called from the given logs, using LLM.
+    Parse the APIs called from the given page_requests, using LLM.
     """
-    # chain = cf.model | cf.parser
-    # cf.logger.debug("Parsing APIs")
-    # messages = [
-    #     SystemMessage(msg.api_system_message),
-    #     HumanMessage(logs),
-    # ]
-    # apis = chain.invoke(messages)
-    # return apis
-    print(logs)
-    return []
+
+    chain = cf.model | cf.parser
+    cf.logger.debug("Parsing APIs")
+    messages = [
+        SystemMessage(msg.api_system_message),
+        HumanMessage(page_requests),
+    ]
+    apis = chain.invoke(messages)
+    return apis
