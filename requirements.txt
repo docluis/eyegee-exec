@@ -3,4 +3,5 @@ browsermob-proxy
 bs4
 langchain
 langchain-openai
+langgraph
 python-dotenv

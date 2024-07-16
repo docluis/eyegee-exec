@@ -32,6 +32,7 @@ def discover_target():
         cf.logger.debug(f"Discovering path: {path}")
 
         cf.driver.get(f"{cf.target}{path}")
+        time.sleep(cf.selenium_rate)
         performance_logs = cf.driver.get_log(
             "performance"
         )  # Get logs, contain network requests
@@ -55,8 +56,7 @@ def discover_target():
                 paths_to_visit.append(parsed_link.path)
 
         sites.append(page)
-        # sleep for a bit
-        time.sleep(1)
+        time.sleep(cf.selenium_rate)
 
     cf.logger.info(f"Done discovering website: {cf.website}")
 
@@ -69,9 +69,8 @@ def analyze_page(path, soup, performance_logs):
     """
     Discover the given path. Create a page object.
     """
-
-    # TODO: Create the page object
-    page = {
+    # TODO: Move this to analyze the pages after discovering?/ alternatively summarize again after this
+    page = { # TODO: Create the page object
         "path": path,
         "summary": llm_create_summary(soup),
         "out_links": parse_links(soup),
@@ -102,7 +101,10 @@ def parse_apis(path, performance_logs):
             print("compare")
             print(log["params"]["request"]["url"])
             print(cf.target + path)
-            if log["params"]["request"]["url"] == cf.target + path: # ignore requests to the same page
+            if (
+                log["params"]["request"]["url"] == cf.target + path
+                and log["params"]["request"]["method"] == "GET"
+            ):  # ignore requests to the same page
                 continue
             page_request = {
                 "url": log["params"]["request"]["url"],

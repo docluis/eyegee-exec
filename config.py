@@ -20,6 +20,7 @@ options = ChromeOptions()
 options.add_experimental_option("perfLoggingPrefs", {"enableNetwork": True})
 options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
 driver = webdriver.Chrome(service=service, options=options)
+selenium_rate = 0.5
 
 
 ####### Model #######
