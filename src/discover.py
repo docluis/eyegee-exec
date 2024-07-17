@@ -11,6 +11,7 @@ from src.llm import (
 )
 
 import config as cf
+from src.utils import parse_page_requests
 
 
 def discover_target():
@@ -70,12 +71,13 @@ def analyze_page(path, soup, performance_logs):
     Discover the given path. Create a page object.
     """
     # TODO: Move this to analyze the pages after discovering?/ alternatively summarize again after this
+    page_requests = parse_page_requests(path, performance_logs)
     page = { # TODO: Create the page object
         "path": path,
         "summary": llm_create_summary(soup),
         "out_links": parse_links(soup),
         "interactions": llm_parse_interactions(soup),
-        "apis_called": parse_apis(path, performance_logs),
+        "apis_called": llm_parse_requests_for_apis(page_requests),
     }
     return page
 
@@ -88,37 +90,6 @@ def parse_links(soup):
     for link in soup.find_all("a"):
         links.append(link.get("href"))
     return links
-
-
-def parse_apis(path, performance_logs):
-    """
-    Parse the APIs called from the given performance_logs.
-    """
-    page_requests = []
-    for log in performance_logs:
-        log = json.loads(log["message"])["message"]
-        if log["method"] == "Network.requestWillBeSent":
-            print("compare")
-            print(log["params"]["request"]["url"])
-            print(cf.target + path)
-            if (
-                log["params"]["request"]["url"] == cf.target + path
-                and log["params"]["request"]["method"] == "GET"
-            ):  # ignore requests to the same page
-                continue
-            page_request = {
-                "url": log["params"]["request"]["url"],
-                "method": log["params"]["request"]["method"],
-                "headers": log["params"]["request"]["headers"],
-                "postData": log["params"]["request"].get("postData"),
-            }
-            print(page_request)
-            page_requests.append(page_request)
-    # put the page_requests into a llm readable format
-    page_requests = json.dumps(page_requests)
-
-    apis = llm_parse_requests_for_apis(page_requests)
-    return apis
 
 
 def output_sites_to_file(sites):
