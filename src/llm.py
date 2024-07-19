@@ -1,15 +1,17 @@
+from venv import logger
 from langchain_core.messages import HumanMessage, SystemMessage
 
-import config as cf
 import src.messages as msg
+from src.interaction import Interaction
+import json
 
 
-def llm_create_summary(soup):
+def llm_create_summary(cf, soup):
     """
     Create a summary of the given soup, using LLM.
     """
     chain = cf.model | cf.parser
-    cf.logger.debug("Creating summary")
+    logger.debug("Creating summary")
     messages = [
         SystemMessage(msg.summary_system_message),
         HumanMessage(soup.get_text()),
@@ -18,12 +20,12 @@ def llm_create_summary(soup):
     return summary
 
 
-def llm_parse_interactions(soup):
+def llm_parse_interactions(cf, soup):
     """
     Parse the interactions of the given soup, using LLM.
     """
     chain = cf.model | cf.parser
-    cf.logger.debug("Parsing interactions")
+    logger.debug("Parsing interactions")
     messages = [
         SystemMessage(msg.interaction_system_message),
         HumanMessage(soup.get_text()),
@@ -31,13 +33,13 @@ def llm_parse_interactions(soup):
     interactions = chain.invoke(messages)
     return interactions
 
-def llm_parse_requests_for_apis(page_requests):
+def llm_parse_requests_for_apis(cf, page_requests):
     """
     Parse the APIs called from the given page_requests, using LLM.
     """
 
     chain = cf.model | cf.parser
-    cf.logger.debug("Parsing APIs")
+    logger.debug("Parsing APIs")
     messages = [
         SystemMessage(msg.api_system_message),
         HumanMessage(page_requests),

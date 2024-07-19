@@ -1,16 +1,21 @@
 import json
-import config as cf
+from typing import List
 
-def parse_page_requests(path, performance_logs):
+from bs4 import BeautifulSoup
+
+from src.page import Page
+
+
+def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> str:
     """
     Parse the page requests from the given performance logs.
     """
     page_requests = []
-    for log in performance_logs:
+    for log in p_logs:
         log = json.loads(log["message"])["message"]
         if log["method"] == "Network.requestWillBeSent":
             if (
-                log["params"]["request"]["url"] == cf.target + path
+                log["params"]["request"]["url"] == target + path
                 and log["params"]["request"]["method"] == "GET"
             ):  # ignore requests to the same page
                 continue
@@ -24,3 +29,31 @@ def parse_page_requests(path, performance_logs):
     # put the page_requests into a llm readable format
     page_requests = json.dumps(page_requests)
     return page_requests
+
+
+def parse_links(soup: BeautifulSoup) -> List[str]:
+    """
+    Parse the links from the given soup.
+    """
+    links = []
+    for link in soup.find_all("a"):
+        links.append(link.get("href"))
+    return links
+
+
+# pages is list of Page objects
+def output_to_file(pages: List[Page]) -> None:
+    """
+    Output the given pages to a file.
+    """
+    with open("output.txt", "w") as file:
+        for page in pages:
+            output = "--------------------------------\n"
+            output += f"Path: {page.path}\n"
+            output += f"Title: {page.title}\n"
+            output += f"Summary: {page.summary}\n"
+            output += f"Interactions: {page.interactions}\n"
+            output += f"APIs Called: {page.apis_called}\n"
+            output += f"Outlinks: {page.outlinks}\n\n"
+            file.write(output)
+    print("Output written to output.txt")
