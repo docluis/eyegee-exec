@@ -126,3 +126,17 @@ def test():
         config={"configurable": {"thread_id": 42}},
     )
     print(final_state["messages"][-1].content)
+
+    # test if the agent remembers the state
+    print("\n\n\n\nTesting if the agent remembers the state")
+    final_state = app.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    "Do not perform any actions, just summarize your previous actions and tell me if you remember the state."
+                )
+            ]
+        },
+        config={"configurable": {"thread_id": 42}},
+    )
+    print(final_state["messages"][-1].content)
