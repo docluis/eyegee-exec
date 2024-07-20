@@ -2,7 +2,12 @@ import time
 from bs4 import BeautifulSoup
 
 from config import Config
-from src.llm import llm_create_summary, llm_parse_interactions, llm_parse_requests_for_apis
+from src.interactionagent import InteractionAgent
+from src.llm import (
+    llm_create_summary,
+    llm_parse_interactions,
+    llm_parse_requests_for_apis,
+)
 from src.siteinfo import SiteInfo
 from src.page import Page
 from src.utils import parse_page_requests, parse_links
@@ -16,7 +21,13 @@ def discover(cf: Config) -> SiteInfo:
     logger.info("Starting discovery")
     si = SiteInfo(cf.target, cf.initial_path)
 
+    interaction_agent = InteractionAgent(cf)
+
     while si.paths_todo:
+        # DEBUG
+        if len(si.paths_visited) > 3:
+            break
+
         path = si.paths_todo.pop(0)
         logger.info(f"Discovering path: {path}")
 
@@ -43,10 +54,16 @@ def discover(cf: Config) -> SiteInfo:
             apis_called=llm_parse_requests_for_apis(cf, p_reqs),
         )
 
+        # TODO: Test the interactions and APIs (?)
+        for interaction in page.interactions:
+            logger.info(f"Interaction: {interaction}")
+            res = interaction_agent.interact(path=path, interaction=interaction)
+            page.interactions_behaviour.append(res)
+
         si.add_paths_to_todo(page.outlinks)
         si.pages.append(page)
         time.sleep(cf.selenium_rate)
-    
+
     logger.info("Discovery complete")
 
     return si

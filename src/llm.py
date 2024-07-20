@@ -2,7 +2,6 @@ from venv import logger
 from langchain_core.messages import HumanMessage, SystemMessage
 
 import src.messages as msg
-from src.interaction import Interaction
 import json
 
 
@@ -31,7 +30,14 @@ def llm_parse_interactions(cf, soup):
         HumanMessage(soup.get_text()),
     ]
     interactions = chain.invoke(messages)
-    return interactions
+
+    try:
+        interactions_json = json.loads(interactions) # TODO: FIX (maybe dont parse here)
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse interactions JSON: {interactions}")
+        interactions_json = []
+
+    return interactions_json
 
 def llm_parse_requests_for_apis(cf, page_requests):
     """
@@ -45,4 +51,11 @@ def llm_parse_requests_for_apis(cf, page_requests):
         HumanMessage(page_requests),
     ]
     apis = chain.invoke(messages)
-    return apis
+    
+    try:
+        apis_json = json.loads(apis) # TODO: FIX
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse apis JSON: {apis}")
+        apis_json = []
+
+    return apis_json

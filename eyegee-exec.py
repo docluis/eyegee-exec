@@ -17,5 +17,4 @@ si = discover(cf)
 output_to_file(si.pages)
 logger.info("EyeGee complete")
 
-# discover_target()
-# test()
+cf.driver.quit()
