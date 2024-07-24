@@ -20,5 +20,5 @@ class Page:
         self.summary = summary
         self.outlinks = outlinks
         self.interactions = interactions
-        self.interactions_behaviour = List
+        self.interactions_behaviour = []
         self.apis_called = apis_called

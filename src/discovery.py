@@ -11,7 +11,7 @@ from src.llm import (
 from src.siteinfo import SiteInfo
 from src.page import Page
 from src.utils import parse_page_requests, parse_links
-from src.logging import logger
+from src.log import logger
 
 
 def discover(cf: Config) -> SiteInfo:
@@ -56,7 +56,7 @@ def discover(cf: Config) -> SiteInfo:
 
         # TODO: Test the interactions and APIs (?)
         for interaction in page.interactions:
-            logger.info(f"Interaction: {interaction}")
+            logger.info(f"Testing Interaction: {interaction}")
             res = interaction_agent.interact(path=path, interaction=interaction)
             page.interactions_behaviour.append(res)
 

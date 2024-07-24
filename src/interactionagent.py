@@ -1,8 +1,9 @@
-import time # type: ignore
+import time
 from typing import Literal
 
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
 
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph, MessagesState
@@ -11,7 +12,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint import MemorySaver
 
 from src.utils import parse_page_requests
-from src.logging import logger
+from src.log import logger
 from src.templates import interactionagent_inital_prompt_template
 
 
@@ -44,6 +45,17 @@ class InteractionAgent:
             element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
             element.send_keys(value)
             return ["Filled text field with value: " + value]
+
+        @tool("select_option")
+        def select_option_tool(xpath_indenfifier: str, visible_value: str):
+            """
+            Select the option from a select menu.
+            """
+            logger.info(f"Selecting option with value: {visible_value}")
+            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+            select = Select(element)
+            select.select_by_visible_text(visible_value)
+            return ["Selected option with visible_value: " + visible_value]
 
         @tool("click_button")
         def click_button_tool(xpath_indenfifier: str):
@@ -78,6 +90,7 @@ class InteractionAgent:
         tools = [
             navigate_tool,
             fill_text_field_tool,
+            select_option_tool,
             click_button_tool,
             get_page_soup_tool,
             get_outgoing_requests,
@@ -86,7 +99,7 @@ class InteractionAgent:
 
     def initialize_app(self):
         def should_continue(state: MessagesState) -> Literal["tools", END]:  # type: ignore
-            print("Checking if should continue")
+            logger.debug("Checking if should continue")
             messages = state["messages"]
             last_message = messages[-1]
 
@@ -119,15 +132,13 @@ class InteractionAgent:
 
         app = workflow.compile(checkpointer=checkpointer)
         return app
-    
+
     def interact(self, path, interaction):
-        prompt = interactionagent_inital_prompt_template.format(path=f"{self.cf.target}{path}", interaction=interaction)
+        prompt = interactionagent_inital_prompt_template.format(
+            url=f"{self.cf.target}{path}", interaction=interaction
+        )
         final_state = self.app.invoke(
-            {
-                "messages": [
-                    HumanMessage(prompt)
-                ]
-            },
+            {"messages": [HumanMessage(prompt)]},
             config={"configurable": {"thread_id": 42}},
         )
         return final_state["messages"][-1].content

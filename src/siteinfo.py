@@ -1,5 +1,5 @@
 from urllib.parse import urlparse
-from venv import logger
+from src.log import logger
 from bs4 import BeautifulSoup
 
 

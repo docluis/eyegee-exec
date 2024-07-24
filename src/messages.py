@@ -34,13 +34,12 @@ Example Output:
     }
 ]
 
-Return an empty list if no interactions are found. Do not include markdown backticks in your output.
-Make sure to not make assumptions about the website's functionality. Only include interactions that are present on the page.
+Return an empty list [] if no interactions are found. Do not include markdown backticks in your output.
 """
 
 
 api_system_message = """
-Pars out the interesting APIs calls from the given performance logs. Omit any calls that are not relevant to the website's functionality and boilerplate code.
+Your task is to parse out the interesting APIs calls from the given performance logs. Omit any calls that are not relevant to the website's functionality and boilerplate code.
 Return the APIs in raw JSON format, where each API call has the following attributes:
 
 url: The URL of the API call.
@@ -60,6 +59,5 @@ Example Output:
     },
 ]
 
-Return an empty list if no APIs are found. Do not include markdown backticks in your output.
-Make sure to not make assumptions about the website's functionality. Only include APIs that are present in the performance logs.
+Return an empty list [] if no APIs are found. Do not include markdown backticks in your output.
 """

@@ -3,3 +3,4 @@ venv/
 src/__pycache__/
 __pycache__/
 output.txt
+eyegee.log

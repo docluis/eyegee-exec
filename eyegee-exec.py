@@ -4,7 +4,7 @@
 from config import Config
 from src.discovery import discover
 from src.utils import output_to_file
-from src.logging import logger
+from src.log import logger
 
 cf = Config()
 

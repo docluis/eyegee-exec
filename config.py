@@ -1,4 +1,4 @@
-import logging
+from src.log import logger
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -13,15 +13,15 @@ class Config:
         load_dotenv()
 
         ####### Selenium #######
-        service = ChromeService(executable_path="/usr/bin/chromedriver")
-        options = ChromeOptions()
-        options.add_experimental_option("perfLoggingPrefs", {"enableNetwork": True})
-        options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
-        self.driver = webdriver.Chrome(service=service, options=options)
+        self.service = ChromeService(executable_path="/usr/bin/chromedriver")
+        self.options = ChromeOptions()
+        self.options.add_experimental_option("perfLoggingPrefs", {"enableNetwork": True})
+        self.options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+        self.driver = webdriver.Chrome(service=self.service, options=self.options)
         self.selenium_rate = 0.5
 
         ####### Model #######
-        self.model = ChatOpenAI(model="gpt-4o")
+        self.model = ChatOpenAI(model="gpt-4o-mini")
         self.parser = StrOutputParser()
 
 
