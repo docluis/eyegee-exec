@@ -16,9 +16,9 @@ Use random testing data for user input.
 
 Your aim is to biefly summarize the observed behavior, how the element works and how the server responds to the interaction from client perspective. Also observe the outgoing requets.
 
-Also note unusual behavior or any errors that occur.
+Also note unusual behavior or any errors that occur during the testing. Keep track of the testing data you used.
 
-Do not make any assumptions.
+Output as string. Keep it concise and to the point.
 """
 interactionagent_inital_prompt_template = PromptTemplate(
     template=interactionagent_inital_prompt,

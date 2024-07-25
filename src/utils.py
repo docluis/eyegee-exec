@@ -4,6 +4,7 @@ from typing import List
 from bs4 import BeautifulSoup
 
 from src.page import Page
+from src.log import logger
 
 
 def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> str:
@@ -57,4 +58,4 @@ def output_to_file(pages: List[Page]) -> None:
             output += f"APIs Called: {page.apis_called}\n"
             output += f"Outlinks: {page.outlinks}\n\n"
             file.write(output)
-    print("Output written to output.txt")
+    logger.info("Output written to output.txt")

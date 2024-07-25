@@ -32,10 +32,11 @@ class Config:
         self.target = f"{parsed_url.scheme}://{parsed_url.netloc}"
         self.initial_path = parsed_url.path
 
+        ####### Check Config #######
         self.check_config()
 
     def check_config(self) -> None:
-        print("Checking Config")
+        logger.info("Checking Config")
         # TODO: Check if all required attributes are set/working
         if not hasattr(self, "driver"):
             raise ValueError("Driver not set")

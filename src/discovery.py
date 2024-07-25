@@ -25,8 +25,8 @@ def discover(cf: Config) -> SiteInfo:
 
     while si.paths_todo:
         # DEBUG
-        if len(si.paths_visited) > 3:
-            break
+        # if len(si.paths_visited) > 3:
+        #     break
 
         path = si.paths_todo.pop(0)
         logger.info(f"Discovering path: {path}")
@@ -53,10 +53,9 @@ def discover(cf: Config) -> SiteInfo:
             interactions=llm_parse_interactions(cf, soup),
             apis_called=llm_parse_requests_for_apis(cf, p_reqs),
         )
-
-        # TODO: Test the interactions and APIs (?)
+        
         for interaction in page.interactions:
-            logger.info(f"Testing Interaction: {interaction}")
+            logger.info(f"Testing Interaction: {interaction.get('name')}")
             res = interaction_agent.interact(path=path, interaction=interaction)
             page.interactions_behaviour.append(res)
 

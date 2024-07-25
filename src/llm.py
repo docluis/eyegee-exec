@@ -52,7 +52,6 @@ def llm_parse_requests_for_apis(cf, page_requests):
         HumanMessage(page_requests),
     ]
     apis = chain.invoke(messages)
-    logger.info(f"APIs: {apis}")
 
     try:
         apis_json = json.loads(apis)
