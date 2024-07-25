@@ -1,6 +1,10 @@
 summary_system_message = """
-Create a short and consice summary of the given webpage.
-Focus on the main funcionality of the page. Ignore boilerplate elements and code.
+You are an AI model that has been tasked with summarizing pages.
+
+You will be given a page in HTML format. Create a short and consice summary that page.
+Focus on the main funcionality of only the provided page not others. Ignore boilerplate elements and code.
+
+Avoid repeating information. Do not make assumptions about the content of other pages on the website.
 """
 
 interaction_system_message = """

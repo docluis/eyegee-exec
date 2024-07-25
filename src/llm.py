@@ -5,20 +5,6 @@ import src.messages as msg
 import json
 
 
-def llm_create_summary(cf, soup):
-    """
-    Create a summary of the given soup, using LLM.
-    """
-    chain = cf.model | cf.parser
-    logger.debug("Creating summary")
-    messages = [
-        SystemMessage(msg.summary_system_message),
-        HumanMessage(soup.get_text()),
-    ]
-    summary = chain.invoke(messages)
-    return summary
-
-
 def llm_parse_interactions(cf, soup):
     """
     Parse the interactions of the given soup, using LLM.
