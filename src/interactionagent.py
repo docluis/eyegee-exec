@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph, MessagesState
 from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
@@ -35,36 +35,38 @@ class InteractionAgent:
             return ["Navigated to " + url]
 
         @tool("fill_text_field")
-        def fill_text_field_tool(xpath_identifier: str, value: str):
+        def fill_text_field_tool(xpath_indenfifier: str, value: str):
             """
             Fill the text field with the given name with the given value.
             """
             logger.info(f"Filling text field with value: {value}")
-            element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
+            # TODO: keep in mind that this is a very simple implementation, XPath is not always the best way to identify,
+            #  it may return muliple elements, or the element may not be found at all, so check edgecases, and improve this
+            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
             element.send_keys(value)
             return ["Filled text field with value: " + value]
 
         @tool("select_option")
-        def select_option_tool(xpath_identifier: str, visible_value: str):
+        def select_option_tool(xpath_indenfifier: str, visible_value: str):
             """
             Select the option from a select menu.
             """
             logger.info(f"Selecting option with value: {visible_value}")
-            element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
+            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
             select = Select(element)
             select.select_by_visible_text(visible_value)
             return ["Selected option with visible_value: " + visible_value]
 
         @tool("click_button")
-        def click_button_tool(xpath_identifier: str):
+        def click_button_tool(xpath_indenfifier: str):
             """
             Click the button with the given name.
             """
-            logger.info(f"Clicking button with name: {xpath_identifier}")
-            element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
+            logger.info(f"Clicking button with name: {xpath_indenfifier}")
+            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
             element.click()
             time.sleep(self.cf.selenium_rate)
-            return ["Clicked button with name: " + xpath_identifier]
+            return ["Clicked button with name: " + xpath_indenfifier]
 
         @tool("get_page_soup")
         def get_page_soup_tool():
@@ -79,9 +81,10 @@ class InteractionAgent:
             """
             Get the performance logs and parse the outgoing requests, to read the APIs called.
             """
+            # TODO: use LLM again to parse out the APIs
             logger.info("Getting outgoing requests")
             performance_logs = self.cf.driver.get_log("performance")
-            page_requests = parse_page_requests("", performance_logs)
+            page_requests = parse_page_requests("", "", performance_logs)
             return [page_requests]
 
         tools = [
@@ -106,37 +109,24 @@ class InteractionAgent:
 
         def call_model(state: MessagesState):
             messages = state["messages"]
+            logger.debug(f"Calling model with messages: {messages}")
             response = self.cf.model.invoke(messages)
             return {"messages": [response]}
-
-        def confirm_action(state: MessagesState):
-            messages = state["messages"]
-            last_message = messages[-1]
-
-            if isinstance(last_message, AIMessage) and "Confirmation needed" not in last_message.content:
-                return {"messages": [HumanMessage("Confirmation needed: " + last_message.content)]}
-
-            user_response = messages[-1].content.lower()
-            if "yes" in user_response or "confirm" in user_response:
-                return {"messages": [HumanMessage("Confirmed")]}
-
-            return {"messages": [HumanMessage("Action not confirmed, stopping.")]}
 
         tool_node = ToolNode(self.tools)
         self.cf.model = self.cf.model.bind_tools(self.tools)
         workflow = StateGraph(MessagesState)
 
         workflow.add_node("agent", call_model)
-        workflow.add_node("confirm", confirm_action)
         workflow.add_node("tools", tool_node)
 
         workflow.set_entry_point("agent")
 
         workflow.add_conditional_edges(
             "agent",
-            lambda state: "confirm" if not state["messages"][-1].tool_calls else "tools",
+            should_continue,
         )
-        workflow.add_edge("confirm", "agent")
+
         workflow.add_edge("tools", "agent")
 
         checkpointer = MemorySaver()
