@@ -26,8 +26,8 @@ def discover(cf: Config) -> SiteInfo:
 
     while si.paths_todo:
         # DEBUG
-        if len(si.paths_visited) > 3:
-            break
+        # if len(si.paths_visited) > 3:
+        #     break
 
         path = si.paths_todo.pop(0)
         logger.info(f"Discovering path: {path}")

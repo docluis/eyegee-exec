@@ -5,3 +5,6 @@ langchain
 langchain-openai
 langgraph
 python-dotenv
+flask
+flask_restful
+flask_cors
