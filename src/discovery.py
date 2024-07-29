@@ -57,8 +57,8 @@ def discover(cf: Config) -> SiteInfo:
         
         for interaction in page.interactions:
             logger.info(f"Testing Interaction: {interaction.get('name')}")
-            res = interaction_agent.interact(path=path, interaction=interaction)
-            page.interactions_behaviour.append(res)
+            behaviour = interaction_agent.interact(path=path, interaction=interaction)
+            interaction["behaviour"] = behaviour
 
         si.add_paths_to_todo(page.outlinks)
         si.pages.append(page)

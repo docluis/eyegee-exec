@@ -4,31 +4,28 @@ from flask_restful import Api, Resource
 from flask_cors import CORS
 from src.vizualizer_backend.src.graph import Graph
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
-api = Api(app)
+def init_app():
+    app = Flask(__name__)
+    CORS(app)  # Enable CORS for all routes
+    api = Api(app)
 
-graph = Graph("siteinfo.pkl")
-
-
-class ExampleResource(Resource):
-    def get(self):
-        return {"message": "Hello, world!"}
+    graph = Graph("siteinfo.pkl")
 
 
-class Graph(Resource):
-    def get(self):
-        return {
-            "site_nodes": graph.site_nodes,
-            "api_nodes": graph.api_nodes,
-            "site_links": graph.site_links,
-            "api_links": graph.api_links,
-        }
+    class ExampleResource(Resource):
+        def get(self):
+            return {"message": "Hello, world!"}
 
 
-api.add_resource(ExampleResource, "/example")
-api.add_resource(Graph, "/graph")
+    class GraphEndpoint(Resource):
+        def get(self):
+            return {
+                "nodes": graph.nodes,
+                "links": graph.links,
+            }
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    api.add_resource(ExampleResource, "/example")
+    api.add_resource(GraphEndpoint, "/graph")
+
+    return app

@@ -6,24 +6,39 @@ from src.discovery import discover
 from src.utils import output_to_file
 from src.log import logger
 import pickle
-from src.vizualizer_backend.app import app
+from src.vizualizer_backend.app import init_app
+import argparse
 
-# cf = Config()
+parser = argparse.ArgumentParser(description="EyeGee")
+parser.add_argument(
+    "-d", "--discover", help="Discover the target website", action="store_true"
+)
+parser.add_argument(
+    "-g",
+    "--graph",
+    help="Start backendserver for visual representation of results",
+    action="store_true",
+)
+args = parser.parse_args()
 
-# logger.info("Starting EyeGee")
-# logger.info(f"Taget: {cf.target}")
+if args.discover:
+    cf = Config()
 
-# # Discover the website
-# si = discover(cf)
+    logger.info("Starting EyeGee")
+    logger.info(f"Taget: {cf.target}")
 
-# output_to_file(si.pages)
-# # Save si to file (so it can be imported later, maybe pickled)
-# with open("siteinfo.pkl", "wb") as f:
-#     pickle.dump(si, f)
+    # Discover the website
+    si = discover(cf)
 
+    # Save si to file (so it can be imported later)
+    with open("siteinfo.pkl", "wb") as f:
+        pickle.dump(si, f)
+    output_to_file(si.pages)
 
-# logger.info("EyeGee complete")
+    logger.info("EyeGee complete")
 
-# cf.driver.quit()
+    cf.driver.quit()
 
-app.run(debug=True)
+if args.graph:
+    app = init_app()
+    app.run(debug=True)
