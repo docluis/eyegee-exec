@@ -59,10 +59,13 @@ const NodeInfoBox = ({ node }) => {
         position: "absolute",
         top: 10,
         right: 10,
-        width: 500,
         background: "white",
         padding: "10px",
         border: "1px solid black",
+        // make is scrollable
+        overflow: "auto",
+        height: "90%",
+        width: 500,
       }}
     >
       {getNodeContent(node)}

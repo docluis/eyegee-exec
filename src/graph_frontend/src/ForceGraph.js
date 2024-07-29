@@ -119,10 +119,18 @@ const ForceGraph = ({ nodesData, linksData }) => {
   }, [nodesData, linksData]); // Run the effect only when nodesData or linksData changes
 
   return (
-    <>
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "80%",
+        overflow: "hidden",
+        border: "1px solid black",
+      }}
+    >
       <svg ref={svgRef}></svg>
       {selectedNode && <NodeInfoBox node={selectedNode} />}
-    </>
+    </div>
   );
 };
 
