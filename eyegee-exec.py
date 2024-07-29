@@ -1,12 +1,10 @@
 #!/usr/bin/python3
-# from src.discover import discover_target
-# from src.agent import test
 from config import Config
-from src.discovery import discover
-from src.utils import output_to_file
+from src.discovery.discovery import discover
+from src.discovery.utils import output_to_file
 from src.log import logger
 import pickle
-from src.vizualizer_backend.app import init_app
+from src.graph_backend.app import init_app
 import argparse
 
 parser = argparse.ArgumentParser(description="EyeGee")

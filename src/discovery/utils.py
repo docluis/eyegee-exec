@@ -3,7 +3,7 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
-from src.page import Page
+from src.discovery.page import Page
 from src.log import logger
 
 

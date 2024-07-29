@@ -1,7 +1,5 @@
 import pickle
-import json
-from src.page import Page
-from src.siteinfo import SiteInfo
+from src.discovery.siteinfo import SiteInfo
 
 
 class Graph:

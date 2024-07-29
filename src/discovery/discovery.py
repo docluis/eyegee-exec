@@ -2,16 +2,16 @@ import time
 from bs4 import BeautifulSoup
 
 from config import Config
-from src.interactionagent import InteractionAgent
-from src.llm import (
+from src.discovery.interactionagent import InteractionAgent
+from src.discovery.llm import (
     llm_parse_interactions,
     llm_parse_requests_for_apis,
 )
-from src.siteinfo import SiteInfo
-from src.page import Page
-from src.utils import parse_page_requests, parse_links
+from src.discovery.siteinfo import SiteInfo
+from src.discovery.page import Page
+from src.discovery.utils import parse_page_requests, parse_links
 from src.log import logger
-from src.summarizer import LLM_Summarizer
+from src.discovery.summarizer import LLM_Summarizer
 
 
 def discover(cf: Config) -> SiteInfo:

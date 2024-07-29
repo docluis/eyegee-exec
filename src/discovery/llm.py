@@ -1,7 +1,7 @@
 from src.log import logger
 from langchain_core.messages import HumanMessage, SystemMessage
 
-import src.messages as msg
+import src.discovery.messages as msg
 import json
 
 
