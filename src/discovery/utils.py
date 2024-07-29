@@ -3,7 +3,7 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
-from src.page import Page
+from src.discovery.page import Page
 from src.log import logger
 
 
@@ -54,7 +54,6 @@ def output_to_file(pages: List[Page]) -> None:
             output += f"Title: {page.title}\n"
             output += f"Summary: {page.summary}\n"
             output += f"Interactions: {page.interactions}\n"
-            output += f"Interactions Behaviour: {page.interactions_behaviour}\n"
             output += f"APIs Called: {page.apis_called}\n"
             output += f"Outlinks: {page.outlinks}\n\n"
             file.write(output)

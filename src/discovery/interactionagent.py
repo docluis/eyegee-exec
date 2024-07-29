@@ -11,9 +11,9 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint import MemorySaver
 
-from src.utils import parse_page_requests
+from src.discovery.utils import parse_page_requests
 from src.log import logger
-from src.templates import interactionagent_inital_prompt_template
+from src.discovery.templates import interactionagent_inital_prompt_template
 
 
 class InteractionAgent:

@@ -1,20 +1,47 @@
 #!/usr/bin/python3
-# from src.discover import discover_target
-# from src.agent import test
 from config import Config
-from src.discovery import discover
-from src.utils import output_to_file
+from src.graph_backend.app import init_app
+from src.discovery.discovery import discover
+from src.discovery.utils import output_to_file
 from src.log import logger
+from src.start_graph_frontend import start_graph_frontend
+import pickle
+import argparse
 
-cf = Config()
+parser = argparse.ArgumentParser(description="EyeGee")
+parser.add_argument(
+    "-d", "--discover", help="Discover the target website", action="store_true"
+)
+parser.add_argument(
+    "-g",
+    "--graph",
+    help="Start frontend and backend for visual representation of results",
+    action="store_true",
+)
+args = parser.parse_args()
 
-logger.info("Starting EyeGee")
-logger.info(f"Taget: {cf.target}")
+if args.discover:
+    cf = Config()
 
-# Discover the website
-si = discover(cf)
+    logger.info("Starting EyeGee")
+    logger.info(f"Taget: {cf.target}")
 
-output_to_file(si.pages)
-logger.info("EyeGee complete")
+    # Discover the website
+    si = discover(cf)
 
-cf.driver.quit()
+    # Save si to file (so it can be imported later)
+    with open("siteinfo.pkl", "wb") as f:
+        pickle.dump(si, f)
+    output_to_file(si.pages)
+
+    logger.info("EyeGee complete")
+
+    cf.driver.quit()
+
+if args.graph:
+    # Start the graph frontend
+    start_graph_frontend()
+
+    # Start the graph backend
+    app = init_app()
+    app.run(port=9778)

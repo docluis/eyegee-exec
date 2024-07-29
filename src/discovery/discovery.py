@@ -2,16 +2,16 @@ import time
 from bs4 import BeautifulSoup
 
 from config import Config
-from src.interactionagent import InteractionAgent
-from src.llm import (
+from src.discovery.interactionagent import InteractionAgent
+from src.discovery.llm import (
     llm_parse_interactions,
     llm_parse_requests_for_apis,
 )
-from src.siteinfo import SiteInfo
-from src.page import Page
-from src.utils import parse_page_requests, parse_links
+from src.discovery.siteinfo import SiteInfo
+from src.discovery.page import Page
+from src.discovery.utils import parse_page_requests, parse_links
 from src.log import logger
-from src.summarizer import LLM_Summarizer
+from src.discovery.summarizer import LLM_Summarizer
 
 
 def discover(cf: Config) -> SiteInfo:
@@ -26,8 +26,8 @@ def discover(cf: Config) -> SiteInfo:
 
     while si.paths_todo:
         # DEBUG
-        if len(si.paths_visited) > 3:
-            break
+        # if len(si.paths_visited) > 3:
+        #     break
 
         path = si.paths_todo.pop(0)
         logger.info(f"Discovering path: {path}")
@@ -57,8 +57,8 @@ def discover(cf: Config) -> SiteInfo:
         
         for interaction in page.interactions:
             logger.info(f"Testing Interaction: {interaction.get('name')}")
-            res = interaction_agent.interact(path=path, interaction=interaction)
-            page.interactions_behaviour.append(res)
+            behaviour = interaction_agent.interact(path=path, interaction=interaction)
+            interaction["behaviour"] = behaviour
 
         si.add_paths_to_todo(page.outlinks)
         si.pages.append(page)
