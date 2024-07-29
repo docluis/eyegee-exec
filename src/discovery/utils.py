@@ -15,11 +15,12 @@ def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> str:
     for log in p_logs:
         log = json.loads(log["message"])["message"]
         if log["method"] == "Network.requestWillBeSent":
-            if (
-                log["params"]["request"]["url"] == target + path
-                and log["params"]["request"]["method"] == "GET"
-            ):  # ignore requests to the same page
-                continue
+            # TODO: check if this is necessary, otherwise remove also params
+            # if (
+            #     log["params"]["request"]["url"] == target + path
+            #     and log["params"]["request"]["method"] == "GET"
+            # ):  # ignore requests to the same page
+            #     continue
             page_request = {
                 "url": log["params"]["request"]["url"],
                 "method": log["params"]["request"]["method"],

@@ -47,6 +47,9 @@ Your task is to parse out the interesting APIs calls from the given performance 
 Return the APIs in raw JSON format, where each API call has the following attributes:
 
 url: The URL of the API call.
+domain: The domain of the API call.
+path: The path of the API call.
+query_string: The query string of the API call.
 method: The HTTP method used in the API call, such as "GET" or "POST".
 headers: A dictionary of headers sent with the API call.
 postData: The data sent with the API call, if any.
@@ -54,7 +57,10 @@ postData: The data sent with the API call, if any.
 Example Output:
 [
     {
-        "url": "https://api.example.com/data",
+        "url": "https://api.example.com/data?query=example",
+        "domain": "api.example.com",
+        "path": "/data",
+        "query_string": "query=example",
         "method": "GET",
         "headers": {
             "Content-Type": "application/json",

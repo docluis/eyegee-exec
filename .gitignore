@@ -5,3 +5,4 @@ __pycache__/
 output.txt
 eyegee.log
 siteinfo.pkl
+.vscode/

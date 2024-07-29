@@ -1,4 +1,5 @@
 import time
+import json
 from typing import Literal
 
 from bs4 import BeautifulSoup
@@ -77,15 +78,16 @@ class InteractionAgent:
             return [BeautifulSoup(self.cf.driver.page_source, "html.parser")]
 
         @tool("get_outgoing_requests")
-        def get_outgoing_requests():
+        def get_outgoing_requests_tool():
             """
             Get the performance logs and parse the outgoing requests, to read the APIs called.
             """
             # TODO: use LLM again to parse out the APIs
             logger.info("Getting outgoing requests")
-            performance_logs = self.cf.driver.get_log("performance")
-            page_requests = parse_page_requests("", "", performance_logs)
-            return [page_requests]
+            # TODO: fix this to get the logs only since last page load, maybe with a timestamp when the page was loaded
+            p_logs = self.cf.driver.get_log("performance")
+            p_reqs = parse_page_requests("", "", p_logs)
+            return [p_reqs]
 
         tools = [
             navigate_tool,
@@ -93,7 +95,7 @@ class InteractionAgent:
             select_option_tool,
             click_button_tool,
             get_page_soup_tool,
-            get_outgoing_requests,
+            get_outgoing_requests_tool,
         ]
         return tools
 
@@ -142,4 +144,14 @@ class InteractionAgent:
             {"messages": [HumanMessage(prompt)]},
             config={"configurable": {"thread_id": 42}},
         )
-        return final_state["messages"][-1].content
+        last_message = final_state["messages"][-1].content
+
+        # also parse out all the apis called from every time get_outgoing_requests tool is called
+        all_p_reqs = []
+        for message in final_state["messages"]:
+            if hasattr(message, 'type') and message.type == "tool" and message.name == "get_outgoing_requests":
+                p_reqs = json.loads(json.loads(message.content)[0])
+                all_p_reqs.extend(p_reqs)
+        all_p_reqs = json.dumps(all_p_reqs)
+
+        return last_message, all_p_reqs

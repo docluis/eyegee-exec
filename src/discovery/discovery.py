@@ -57,8 +57,10 @@ def discover(cf: Config) -> SiteInfo:
         
         for interaction in page.interactions:
             logger.info(f"Testing Interaction: {interaction.get('name')}")
-            behaviour = interaction_agent.interact(path=path, interaction=interaction)
+            behaviour, all_p_reqs = interaction_agent.interact(path=path, interaction=interaction)
+            apis_called = llm_parse_requests_for_apis(cf, all_p_reqs)
             interaction["behaviour"] = behaviour
+            interaction["apis_called"] = apis_called
 
         si.add_paths_to_todo(page.outlinks)
         si.pages.append(page)

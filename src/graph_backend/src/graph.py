@@ -31,11 +31,15 @@ class Graph:
             }
             nodes.append(node)
 
-        # add API nodes
+        # add API nodes from the pages
         for page in si.pages:
             for api in page.apis_called:
                 # Construct a node from an API in JSON format
-                node = {"id": api["url"], "label": api["url"], "type": "api"}
+                node = {
+                    "id": f"{api["method"]} {api["path"]}",
+                    "label": f"{api["method"]} {api["path"]}",
+                    "type": "api"
+                }
                 nodes.append(node)
 
         # add interaction nodes
@@ -51,6 +55,18 @@ class Graph:
                     "behaviour": interaction["behaviour"],
                 }
                 nodes.append(node)
+
+        # add api nodes from the interactions
+        for page in si.pages:
+            for interaction in page.interactions:
+                for api in interaction["apis_called"]:
+                    # Construct a node from an API in JSON format
+                    node = {
+                        "id": f"{api["method"]} {api["path"]}",
+                        "label": f"{api["method"]} {api["path"]}",
+                        "type": "api"
+                    }
+                    nodes.append(node)
         return nodes
 
     def parse_links(self, si: SiteInfo):
@@ -72,9 +88,9 @@ class Graph:
         for page in si.pages:
             for api in page.apis_called:
                 edge = {
-                    "id": f"{page.path}->{api['url']}",
+                    "id": f"{page.path}->{api["method"]} {api["path"]}",
                     "source": page.path,
-                    "target": api["url"],
+                    "target": f"{api["method"]} {api["path"]}",
                 }
                 links.append(edge)
         # add interaction links
@@ -86,4 +102,15 @@ class Graph:
                     "target": interaction["name"],
                 }
                 links.append(edge)
+
+        # add interaction to API links
+        for page in si.pages:
+            for interaction in page.interactions:
+                for api in interaction["apis_called"]:
+                    edge = {
+                        "id": f"{interaction['name']}->{api['method']} {api['path']}",
+                        "source": interaction["name"],
+                        "target": f"{api['method']} {api['path']}",
+                    }
+                    links.append(edge)
         return links
