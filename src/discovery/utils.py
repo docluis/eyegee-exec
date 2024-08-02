@@ -7,7 +7,7 @@ from src.discovery.page import Page
 from src.log import logger
 
 
-def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> str:
+def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> List[dict]:
     """
     Parse the page requests from the given performance logs.
     """
@@ -28,8 +28,6 @@ def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> str:
                 "postData": log["params"]["request"].get("postData"),
             }
             page_requests.append(page_request)
-    # put the page_requests into a llm readable format
-    page_requests = json.dumps(page_requests)
     return page_requests
 
 
@@ -41,6 +39,20 @@ def parse_links(soup: BeautifulSoup) -> List[str]:
     for link in soup.find_all("a"):
         links.append(link.get("href"))
     return links
+
+
+def get_performance_logs(driver) -> List[dict]:
+    """
+    Get the performance logs from the given driver since the last navigation.
+    """
+    logs = driver.get_log("performance")
+    ts = driver.execute_script("return window.performance.timing.navigationStart")
+    logs = [log for log in logs if log["timestamp"] > ts]
+    with open("performances_logs.json", "a") as file:
+        file.write("\n")
+        file.write(f"Performance Logs for {driver.current_url}\n")
+        json.dump(logs, file, indent=4)
+    return logs
 
 
 # pages is list of Page objects

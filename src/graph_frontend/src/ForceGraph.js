@@ -24,7 +24,7 @@ const ForceGraph = ({ nodesData, linksData }) => {
           .id((d) => d.id)
           .distance(100)
       ) // Increased link distance
-      .force("charge", d3.forceManyBody().strength(-2000)) // Adjusted charge strength
+      .force("charge", d3.forceManyBody().strength(-1000)) // Adjusted charge strength
       .force("x", d3.forceX())
       .force("y", d3.forceY());
 

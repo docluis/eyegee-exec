@@ -12,7 +12,7 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint import MemorySaver
 
-from src.discovery.utils import parse_page_requests
+from src.discovery.utils import get_performance_logs, parse_page_requests
 from src.log import logger
 from src.discovery.templates import interactionagent_inital_prompt_template
 
@@ -22,6 +22,7 @@ class InteractionAgent:
         self.cf = cf
         self.tools = self.initialize_tools()
         self.app = self.initialize_app()
+        self.p_reqs = []
 
     def initialize_tools(self):
         # Define tools for interaction with the website using Selenium
@@ -81,13 +82,13 @@ class InteractionAgent:
         def get_outgoing_requests_tool():
             """
             Get the performance logs and parse the outgoing requests, to read the APIs called.
+            Will only return requests since the last navigation.
             """
-            # TODO: use LLM again to parse out the APIs
             logger.info("Getting outgoing requests")
-            # TODO: fix this to get the logs only since last page load, maybe with a timestamp when the page was loaded
-            p_logs = self.cf.driver.get_log("performance")
+            p_logs = get_performance_logs(self.cf.driver)
             p_reqs = parse_page_requests("", "", p_logs)
-            return [p_reqs]
+            self.p_reqs.extend(p_reqs)
+            return [json.dumps(p_reqs, indent=4)]
 
         tools = [
             navigate_tool,
@@ -137,6 +138,7 @@ class InteractionAgent:
         return app
 
     def interact(self, path, interaction):
+        self.p_reqs = []
         prompt = interactionagent_inital_prompt_template.format(
             url=f"{self.cf.target}{path}", interaction=interaction
         )
@@ -147,11 +149,15 @@ class InteractionAgent:
         last_message = final_state["messages"][-1].content
 
         # also parse out all the apis called from every time get_outgoing_requests tool is called
-        all_p_reqs = []
-        for message in final_state["messages"]:
-            if hasattr(message, 'type') and message.type == "tool" and message.name == "get_outgoing_requests":
-                p_reqs = json.loads(json.loads(message.content)[0])
-                all_p_reqs.extend(p_reqs)
-        all_p_reqs = json.dumps(all_p_reqs)
+        # all_p_reqs = []
+        # for message in final_state["messages"]:
+        #     if (
+        #         hasattr(message, "type")
+        #         and message.type == "tool"
+        #         and message.name == "get_outgoing_requests"
+        #     ):
+        #         p_reqs = json.loads(json.loads(message.content)[0])
+        #         all_p_reqs.extend(p_reqs)
+        # all_p_reqs = json.dumps(all_p_reqs)
 
-        return last_message, all_p_reqs
+        return last_message, self.p_reqs

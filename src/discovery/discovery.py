@@ -1,3 +1,4 @@
+import json
 import time
 from bs4 import BeautifulSoup
 
@@ -9,7 +10,7 @@ from src.discovery.llm import (
 )
 from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
-from src.discovery.utils import parse_page_requests, parse_links
+from src.discovery.utils import get_performance_logs, parse_page_requests, parse_links
 from src.log import logger
 from src.discovery.summarizer import LLM_Summarizer
 
@@ -41,7 +42,7 @@ def discover(cf: Config) -> SiteInfo:
         if si.check_if_visited(soup):
             continue
 
-        p_logs = cf.driver.get_log("performance")
+        p_logs = get_performance_logs(cf.driver)
         p_reqs = parse_page_requests(cf.target, path, p_logs)
 
         # Create the page object
@@ -52,13 +53,15 @@ def discover(cf: Config) -> SiteInfo:
             summary=llm_summarizer.create_summary(soup),
             outlinks=parse_links(soup),
             interactions=llm_parse_interactions(cf, soup),
-            apis_called=llm_parse_requests_for_apis(cf, p_reqs),
+            apis_called=llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4)),
         )
-        
+
         for interaction in page.interactions:
             logger.info(f"Testing Interaction: {interaction.get('name')}")
-            behaviour, all_p_reqs = interaction_agent.interact(path=path, interaction=interaction)
-            apis_called = llm_parse_requests_for_apis(cf, all_p_reqs)
+            behaviour, all_p_reqs = interaction_agent.interact(
+                path=path, interaction=interaction
+            )
+            apis_called = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
             interaction["behaviour"] = behaviour
             interaction["apis_called"] = apis_called
 

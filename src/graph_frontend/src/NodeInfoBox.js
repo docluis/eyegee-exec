@@ -38,10 +38,8 @@ const NodeInfoBox = ({ node }) => {
         return (
           <>
             <h3>{node.label} (API)</h3>
-            <p>
-              This is an API node. Information about the API can be provided
-              here.
-            </p>
+            <h3>DEBUG From</h3>
+            <p>{node.from}</p>
           </>
         );
       default:

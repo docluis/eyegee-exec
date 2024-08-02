@@ -38,7 +38,8 @@ class Graph:
                 node = {
                     "id": f"{api["method"]} {api["path"]}",
                     "label": f"{api["method"]} {api["path"]}",
-                    "type": "api"
+                    "type": "api",
+                    "from": page.path,
                 }
                 nodes.append(node)
 
@@ -64,7 +65,8 @@ class Graph:
                     node = {
                         "id": f"{api["method"]} {api["path"]}",
                         "label": f"{api["method"]} {api["path"]}",
-                        "type": "api"
+                        "type": "api",
+                        "from": interaction["name"],
                     }
                     nodes.append(node)
         return nodes
