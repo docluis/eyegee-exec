@@ -23,8 +23,8 @@ const ForceGraph = ({ nodesData, linksData }) => {
           .forceLink(links)
           .id((d) => d.id)
           .distance(100)
-      ) // Increased link distance
-      .force("charge", d3.forceManyBody().strength(-1000)) // Adjusted charge strength
+      )
+      .force("charge", d3.forceManyBody().strength(-1000))
       .force("x", d3.forceX())
       .force("y", d3.forceY());
 
@@ -35,9 +35,11 @@ const ForceGraph = ({ nodesData, linksData }) => {
       .attr("viewBox", [-width / 2, -height / 2, width, height])
       .attr("style", "max-width: 100%; height: auto;");
 
-    svg.selectAll("*").remove(); // Clear existing elements
+    svg.selectAll("*").remove();
 
-    const link = svg
+    const zoomGroup = svg.append("g");
+
+    const link = zoomGroup
       .append("g")
       .attr("stroke", "#999")
       .attr("stroke-opacity", 0.6)
@@ -47,7 +49,7 @@ const ForceGraph = ({ nodesData, linksData }) => {
       .append("line")
       .attr("stroke-width", (d) => Math.sqrt(d.value));
 
-    const node = svg
+    const node = zoomGroup
       .append("g")
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
@@ -60,13 +62,11 @@ const ForceGraph = ({ nodesData, linksData }) => {
         if (d.type === "page") return "lightblue";
         if (d.type === "api") return "red";
         if (d.type === "interaction") return "purple";
-        return color(d.group); // Default color
+        return color(d.group);
       })
-      .on("click", (event, d) => setSelectedNode(d)); // Highlight on click
+      .on("click", (event, d) => setSelectedNode(d));
 
-    // node.append("title").text((d) => d.label);
-
-    const text = svg
+    const text = zoomGroup
       .append("g")
       .selectAll("text")
       .data(nodes)
@@ -74,7 +74,7 @@ const ForceGraph = ({ nodesData, linksData }) => {
       .append("text")
       .attr("dy", 0)
       .attr("dx", 20)
-      .text((d) => d.label) // Adding name as text
+      .text((d) => d.label)
       .style("fill", "black")
       .attr("font-size", "14px");
 
@@ -85,6 +85,33 @@ const ForceGraph = ({ nodesData, linksData }) => {
         .on("drag", dragged)
         .on("end", dragended)
     );
+
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        const context = this;
+        const later = () => {
+          timeout = null;
+          func.apply(context, args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.1, 4]) // Zoom scale limits
+      .on(
+        "zoom",
+        debounce((event) => {
+          zoomGroup.attr("transform", event.transform);
+          // Restart the simulation after zooming
+          simulation.alpha(1).restart();
+        }, 1) // TODO: Performance optimization?
+      );
+
+    svg.call(zoom);
 
     simulation.on("tick", () => {
       link
@@ -116,7 +143,7 @@ const ForceGraph = ({ nodesData, linksData }) => {
     }
 
     return () => simulation.stop();
-  }, [nodesData, linksData]); // Run the effect only when nodesData or linksData changes
+  }, [nodesData, linksData]);
 
   return (
     <div
