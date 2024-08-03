@@ -2,7 +2,7 @@ from src.log import logger
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import Any, Dict, List
 
-import src.discovery.messages as msg
+from src.discovery.messages import api_system_message, interaction_system_message
 import json
 
 
@@ -13,7 +13,7 @@ def llm_parse_interactions(cf, soup) -> List[Dict]:
     chain = cf.model | cf.parser
     logger.debug("Parsing interactions")
     messages = [
-        SystemMessage(msg.interaction_system_message),
+        SystemMessage(interaction_system_message),
         HumanMessage(soup.prettify()),
     ]
     interactions = chain.invoke(messages)
@@ -35,7 +35,7 @@ def llm_parse_requests_for_apis(cf, page_requests) -> List[Dict]:
     chain = cf.model | cf.parser
     logger.debug("Parsing APIs")
     messages = [
-        SystemMessage(msg.api_system_message),
+        SystemMessage(api_system_message),
         HumanMessage(page_requests),
     ]
     apis = chain.invoke(messages)
