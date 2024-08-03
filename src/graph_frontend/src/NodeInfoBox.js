@@ -27,7 +27,9 @@ const NodeInfoBox = ({ node }) => {
             <h3>Inputs</h3>
             <ul>
               {node.input_fields.map((input) => (
-                <li key={input.name}>{input.name} (type:{input.type})</li>
+                <li key={input.name}>
+                  {input.name} (type:{input.type})
+                </li>
               ))}
             </ul>
             <h3>Behavior</h3>
@@ -38,8 +40,20 @@ const NodeInfoBox = ({ node }) => {
         return (
           <>
             <h3>{node.label} (API)</h3>
-            <h3>DEBUG From</h3>
-            <p>{node.from}</p>
+            <h3>Parameters</h3>
+            <ul>
+              {node.params.map((param) => (
+                <li key={param.name}>
+                  {param.name} (type:{param.type})
+                  {/* observed values */}
+                  <ul>
+                    {param.observed_values.map((value) => (
+                      <li key={value}>{value}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
           </>
         );
       default:

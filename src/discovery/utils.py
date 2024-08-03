@@ -3,6 +3,7 @@ from typing import List
 
 from bs4 import BeautifulSoup
 
+from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
 from src.log import logger
 
@@ -56,12 +57,12 @@ def get_performance_logs(driver) -> List[dict]:
 
 
 # pages is list of Page objects
-def output_to_file(pages: List[Page]) -> None:
+def output_to_file(si: SiteInfo) -> None:
     """
     Output the given pages to a file.
     """
     with open("output.txt", "w") as file:
-        for page in pages:
+        for page in si.pages:
             output = "--------------------------------\n"
             output += f"Path: {page.path}\n"
             output += f"Title: {page.title}\n"
@@ -69,5 +70,14 @@ def output_to_file(pages: List[Page]) -> None:
             output += f"Interactions: {page.interactions}\n"
             output += f"APIs Called: {page.apis_called}\n"
             output += f"Outlinks: {page.outlinks}\n\n"
+            file.write(output)
+        for api in si.apis:
+            output = "--------------------------------\n"
+            output += f"Method: {api.method}\n"
+            output += f"Route: {api.route}\n"
+            for param in api.params:
+                output += f"Param: {param.name}\n"
+                output += f"Observed Values: {param.observed_values}\n"
+                output += f"Param Type: {param.param_type}\n"
             file.write(output)
     logger.info("Output written to output.txt")

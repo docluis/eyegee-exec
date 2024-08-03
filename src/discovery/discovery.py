@@ -13,6 +13,7 @@ from src.discovery.page import Page
 from src.discovery.utils import get_performance_logs, parse_page_requests, parse_links
 from src.log import logger
 from src.discovery.summarizer import LLM_Summarizer
+from src.discovery.api import Api
 
 
 def discover(cf: Config) -> SiteInfo:
@@ -45,6 +46,9 @@ def discover(cf: Config) -> SiteInfo:
         p_logs = get_performance_logs(cf.driver)
         p_reqs = parse_page_requests(cf.target, path, p_logs)
 
+        apis = llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4))
+        apis_called_passive = si.add_apis(apis)
+
         # Create the page object
         page = Page(
             path=path,
@@ -53,7 +57,7 @@ def discover(cf: Config) -> SiteInfo:
             summary=llm_summarizer.create_summary(soup),
             outlinks=parse_links(soup),
             interactions=llm_parse_interactions(cf, soup),
-            apis_called=llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4)),
+            apis_called=apis_called_passive,
         )
 
         for interaction in page.interactions:
@@ -61,12 +65,13 @@ def discover(cf: Config) -> SiteInfo:
             behaviour, all_p_reqs = interaction_agent.interact(
                 path=path, interaction=interaction
             )
-            apis_called = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
+            apis = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
+            apis_called_interaction = si.add_apis(apis)
             interaction["behaviour"] = behaviour
-            interaction["apis_called"] = apis_called
+            interaction["apis_called"] = apis_called_interaction
 
         si.add_paths_to_todo(page.outlinks)
-        si.pages.append(page)
+        si.add_page(page)
         time.sleep(cf.selenium_rate)
 
     logger.info("Discovery complete")

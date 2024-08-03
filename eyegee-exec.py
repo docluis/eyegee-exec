@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import time
 from config import Config
 from src.graph_backend.app import init_app
 from src.discovery.discovery import discover
@@ -32,7 +33,7 @@ if args.discover:
     # Save si to file (so it can be imported later)
     with open("siteinfo.pkl", "wb") as f:
         pickle.dump(si, f)
-    output_to_file(si.pages)
+    output_to_file(si)
 
     logger.info("EyeGee complete")
 
@@ -40,7 +41,10 @@ if args.discover:
 
 if args.graph:
     # Start the graph frontend
-    start_graph_frontend()
+    # start_graph_frontend()
+
+    # sleep
+    # time.sleep(3)
 
     # Start the graph backend
     app = init_app()
