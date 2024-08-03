@@ -1,11 +1,12 @@
 from src.log import logger
 from langchain_core.messages import HumanMessage, SystemMessage
+from typing import Any, Dict, List
 
 import src.discovery.messages as msg
 import json
 
 
-def llm_parse_interactions(cf, soup):
+def llm_parse_interactions(cf, soup) -> List[Dict]:
     """
     Parse the interactions of the given soup, using LLM.
     """
@@ -21,12 +22,12 @@ def llm_parse_interactions(cf, soup):
         interactions_json = json.loads(interactions)
     except json.JSONDecodeError:
         logger.error(f"Failed to parse interactions JSON: {interactions}")
-        interactions_json = {}
+        interactions_json = []
 
     return interactions_json
 
 
-def llm_parse_requests_for_apis(cf, page_requests):
+def llm_parse_requests_for_apis(cf, page_requests) -> List[Dict]:
     """
     Parse the APIs called from the given page_requests, using LLM.
     """
@@ -43,6 +44,6 @@ def llm_parse_requests_for_apis(cf, page_requests):
         apis_json = json.loads(apis)
     except json.JSONDecodeError:
         logger.error(f"Failed to parse apis JSON: {apis}")
-        apis_json = {}
+        apis_json = []
 
     return apis_json

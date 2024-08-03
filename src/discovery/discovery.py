@@ -63,7 +63,7 @@ def discover(cf: Config) -> SiteInfo:
         for interaction in page.interactions:
             logger.info(f"Testing Interaction: {interaction.get('name')}")
             behaviour, all_p_reqs = interaction_agent.interact(
-                path=path, interaction=interaction
+                path=path, interaction=json.dumps(interaction)
             )
             apis = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
             apis_called_interaction = si.add_apis(apis)

@@ -1,5 +1,4 @@
-import json
-from typing import List
+from typing import List, Dict
 from bs4 import BeautifulSoup
 
 
@@ -10,9 +9,9 @@ class Page:
         title: str,
         soup: BeautifulSoup,
         summary: str,
-        outlinks: list,
-        interactions: json, # TODO: change to list[Interaction] ?
-        apis_called: json, # TODO: change to list[API] ?
+        outlinks: List[str],
+        interactions: List[Dict],  # TODO: change to list[Interaction] ?
+        apis_called: List[Dict],  # TODO: change to list[API] ?
     ) -> None:
         self.path = path
         self.title = title
