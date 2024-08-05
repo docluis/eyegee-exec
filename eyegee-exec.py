@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import threading
 import time
 from config import Config
 from src.graph_backend.app import init_app
@@ -8,6 +9,27 @@ from src.log import logger
 from src.start_graph_frontend import start_graph_frontend
 import pickle
 import argparse
+
+
+def start_graph_backend():
+    app = init_app()
+    app.run(port=9778)
+
+
+def start_servers():
+    # Start the frontend in a separate thread
+    frontend_thread = threading.Thread(target=start_graph_frontend)
+    frontend_thread.start()
+
+    # Give the frontend some time to initialize (adjust if needed)
+    time.sleep(5)
+
+    # Start the backend in the main thread
+    start_graph_backend()
+
+    # Wait for the frontend thread to complete
+    frontend_thread.join()
+
 
 parser = argparse.ArgumentParser(description="EyeGee")
 parser.add_argument(
@@ -40,12 +62,4 @@ if args.discover:
     cf.driver.quit()
 
 if args.graph:
-    # Start the graph frontend
-    # start_graph_frontend()
-
-    # sleep
-    # time.sleep(3)
-
-    # Start the graph backend
-    app = init_app()
-    app.run(port=9778)
+    start_servers()

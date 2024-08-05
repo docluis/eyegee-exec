@@ -63,8 +63,8 @@ class SiteInfo:
                 found = api_obj
             added_apis.append(f"{found.method} {found.route}")
             # Add the url parameters
-            logger.info(f"Adding API: {found.method} {found.route}")
-            logger.info(f"Api: {api}")
+            logger.debug(f"Adding API: {found.method} {found.route}")
+            logger.debug(f"Api: {api}")
             if (
                 api["query_string"] is not None
                 and api["query_string"] != ""

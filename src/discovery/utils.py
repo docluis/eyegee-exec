@@ -49,10 +49,6 @@ def get_performance_logs(driver) -> List[dict]:
     logs = driver.get_log("performance")
     ts = driver.execute_script("return window.performance.timing.navigationStart")
     logs = [log for log in logs if log["timestamp"] > ts]
-    with open("performances_logs.json", "a") as file:
-        file.write("\n")
-        file.write(f"Performance Logs for {driver.current_url}\n")
-        json.dump(logs, file, indent=4)
     return logs
 
 
