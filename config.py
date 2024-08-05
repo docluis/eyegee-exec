@@ -15,6 +15,7 @@ class Config:
         ####### Selenium #######
         self.service = ChromeService(executable_path="/usr/bin/chromedriver")
         self.options = ChromeOptions()
+        self.options.add_argument("--lang=en")
         self.options.add_experimental_option("perfLoggingPrefs", {"enableNetwork": True})
         self.options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
         self.driver = webdriver.Chrome(service=self.service, options=self.options)

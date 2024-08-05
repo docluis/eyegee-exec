@@ -45,6 +45,7 @@ class InteractionAgent:
             # TODO: keep in mind that this is a very simple implementation, XPath is not always the best way to identify,
             #  it may return muliple elements, or the element may not be found at all, so check edgecases, and improve this
             element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+            element.clear()  # clear the field first
             element.send_keys(value)
             return ["Filled text field with value: " + value]
 
@@ -109,6 +110,11 @@ class InteractionAgent:
             if last_message.tool_calls:
                 return "tools"
             return END
+            # else:
+            #     here check if last_message is a message that indicates that the interaction is done
+            #     if so return END
+            #     else retry the interaction
+            #     also increase a counter to prevent infinite loops
 
         def call_model(state: MessagesState):
             messages = state["messages"]
@@ -138,7 +144,7 @@ class InteractionAgent:
         return app
 
     def interact(self, path, interaction):
-        self.p_reqs = []
+        self.p_reqs = []  # reset the page request list
         prompt = interactionagent_inital_prompt_template.format(
             url=f"{self.cf.target}{path}", interaction=interaction
         )
@@ -148,16 +154,5 @@ class InteractionAgent:
         )
         last_message = final_state["messages"][-1].content
 
-        # also parse out all the apis called from every time get_outgoing_requests tool is called
-        # all_p_reqs = []
-        # for message in final_state["messages"]:
-        #     if (
-        #         hasattr(message, "type")
-        #         and message.type == "tool"
-        #         and message.name == "get_outgoing_requests"
-        #     ):
-        #         p_reqs = json.loads(json.loads(message.content)[0])
-        #         all_p_reqs.extend(p_reqs)
-        # all_p_reqs = json.dumps(all_p_reqs)
 
         return last_message, self.p_reqs
