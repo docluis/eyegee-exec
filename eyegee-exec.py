@@ -13,7 +13,7 @@ import argparse
 
 def start_graph_backend():
     app = init_app()
-    app.run(port=9778)
+    app.run(port=9778, debug=True)
 
 
 def start_servers():

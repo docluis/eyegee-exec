@@ -25,6 +25,7 @@ class InteractionAgent:
         self.tools = self.initialize_tools()
         self.app = self.initialize_app()
         self.p_reqs = []
+        self.last_page_soup = None
 
     def initialize_tools(self):
         # Define tools for interaction with the website using Selenium
@@ -62,18 +63,24 @@ class InteractionAgent:
             if actual_value == value:
                 res = f"Attempted to fill text field: {xpath_indenfifier} with value: {value}."
             else:
-                soup = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
+                soup = BeautifulSoup(
+                    self.cf.driver.page_source, "html.parser"
+                ).prettify()
                 res = f"Error: Attempted to fill text field: {xpath_indenfifier} with value: {value}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
             logger.debug(res)
             return [res]
-        
+
         @tool("fill_text_field_date")
-        def fill_text_field_date_tool(xpath_indenfifier: str, year_value: str, month_value: str, day_value: str):
+        def fill_text_field_date_tool(
+            xpath_indenfifier: str, year_value: str, month_value: str, day_value: str
+        ):
             """
             Fill the date field with the given name with the given value.
             """
-            logger.info(f"Filling date field with value: {year_value}-{month_value}-{day_value}")
+            logger.info(
+                f"Filling date field with value: {year_value}-{month_value}-{day_value}"
+            )
 
             entry = f"{month_value}-{day_value}-{year_value}"
             element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
@@ -85,10 +92,16 @@ class InteractionAgent:
 
             actual_year, actual_month, actual_day = actual_value.split("-")
 
-            if actual_value == entry or (actual_year == year_value and actual_month == month_value and actual_day == day_value):
+            if actual_value == entry or (
+                actual_year == year_value
+                and actual_month == month_value
+                and actual_day == day_value
+            ):
                 res = f"Filled date field: {xpath_indenfifier} with value: {entry}."
             else:
-                soup = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
+                soup = BeautifulSoup(
+                    self.cf.driver.page_source, "html.parser"
+                ).prettify()
                 res = f"Error: Attempted to fill date field: {xpath_indenfifier} with value: {entry}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
             logger.debug(res)
@@ -145,10 +158,36 @@ class InteractionAgent:
             """
             logger.info("Getting page source")
 
-            res = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+            res = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
+            self.last_page_soup = res
 
             logger.debug(res)
             return [res]
+
+        @tool("get_page_soup_diff")
+        def get_page_soup_diff_tool():
+            """
+            Get the only the diff since last get_page_soup or get_page_soup_diff tool call.
+
+            May improve efficiency, by providing fewer token.
+            """
+            logger.info("Getting page source diff")
+
+            if self.last_page_soup is None:
+                return ["No previous page soup found. Use get_page_soup first."]
+            else:
+                res = BeautifulSoup(
+                    self.cf.driver.page_source, "html.parser"
+                ).prettify()
+                diff = unified_diff(
+                    self.last_page_soup.splitlines(),
+                    res.splitlines(),
+                    lineterm="",
+                )
+                self.last_page_soup = res
+                diff_print = "\n".join(list(diff))
+                logger.debug(diff_print)
+                return [diff_print]
 
         @tool("get_outgoing_requests")
         def get_outgoing_requests_tool():
@@ -173,6 +212,7 @@ class InteractionAgent:
             select_option_tool,
             click_button_tool,
             get_page_soup_tool,
+            get_page_soup_diff_tool,
             get_outgoing_requests_tool,
         ]
         return tools
@@ -183,7 +223,7 @@ class InteractionAgent:
             messages = state["messages"]
             last_message = messages[-1]
 
-            if last_message.tool_calls: # continue if the last message was a tool call
+            if last_message.tool_calls:  # continue if the last message was a tool call
                 return "tools"
             return END
 
@@ -216,6 +256,7 @@ class InteractionAgent:
 
     def interact(self, path, interaction):
         self.p_reqs = []  # reset the page request list
+        self.last_page_soup = None  # reset the last page soup
         prompt = interactionagent_inital_prompt_template.format(
             url=f"{self.cf.target}{path}", interaction=interaction
         )

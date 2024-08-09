@@ -9,7 +9,7 @@ def start_graph_frontend():
     try:
         subprocess.run(["npm", "install"], check=True, cwd=graph_frontend_path)
         process = subprocess.Popen(
-            ["npm", "start"],
+            ["npm", "run", "dev"],
             cwd=graph_frontend_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

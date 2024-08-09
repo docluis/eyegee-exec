@@ -3,10 +3,11 @@ import time
 from bs4 import BeautifulSoup
 
 from config import Config
+from src.discovery.interactionparser import LLM_InteractionParser
 from src.discovery.interactionagent import InteractionAgent
 from src.discovery.llm import (
-    llm_parse_interactions,
     llm_parse_requests_for_apis,
+    llm_rank_interactions,
 )
 from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
@@ -25,6 +26,7 @@ def discover(cf: Config) -> SiteInfo:
 
     interaction_agent = InteractionAgent(cf)
     llm_summarizer = LLM_Summarizer(cf)
+    llm_interactionparser = LLM_InteractionParser(cf)
 
     while si.paths_todo:
         # DEBUG
@@ -49,6 +51,9 @@ def discover(cf: Config) -> SiteInfo:
         apis = llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4))
         apis_called_passive = si.add_apis(apis)
 
+        interactions = llm_interactionparser.parse_interactions(soup)
+        interaction_names = si.add_interactions(interactions)
+
         # Create the page object
         page = Page(
             path=path,
@@ -56,23 +61,45 @@ def discover(cf: Config) -> SiteInfo:
             soup=soup,
             summary=llm_summarizer.create_summary(soup),
             outlinks=parse_links(soup),
-            interactions=llm_parse_interactions(cf, soup),
+            interaction_names=interaction_names,
             apis_called=apis_called_passive,
         )
 
-        for interaction in page.interactions:
-            logger.info(f"Testing Interaction: {interaction.get('name')}")
-            behaviour, all_p_reqs = interaction_agent.interact(
-                path=path, interaction=json.dumps(interaction)
-            )
-            apis = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
-            apis_called_interaction = si.add_apis(apis)
-            interaction["behaviour"] = behaviour
-            interaction["apis_called"] = apis_called_interaction
+        for interaction_name in page.interaction_names:
+            logger.info(f"Found Interaction: {interaction_name}")
+            # logger.info(f"Testing Interaction: {interaction.get('name')}")
+            # behaviour, all_p_reqs = interaction_agent.interact(
+            #     path=path, interaction=json.dumps(interaction)
+            # )
+            # apis = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
+            # apis_called_interaction = si.add_apis(apis)
+            # interaction["behaviour"] = behaviour
+            # interaction["apis_called"] = apis_called_interaction
 
         si.add_paths_to_todo(page.outlinks)
         si.add_page(page)
         time.sleep(cf.selenium_rate)
+
+    logger.info("Testing Interactions")
+    logger.info(f"Ranking Interactions, Selecting Top {cf.interaction_test_limit}...")
+    ranked_interactions = llm_rank_interactions(cf, si.interactions)
+    ranked_interactions = ranked_interactions[: cf.interaction_test_limit]
+    logger.info(f"Ranked Interactions: {ranked_interactions}")
+
+    for i in ranked_interactions:
+        for interaction in si.interactions:
+            if interaction.name == i:
+                logger.info(f"Testing Interaction: {interaction.name}")
+                path = si.get_paths_with_interaction(interaction.name)
+                behaviour, all_p_reqs = interaction_agent.interact(
+                    path=path[0], interaction=json.dumps(interaction.to_dict())
+                )
+                apis = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
+                apis_called_interaction = si.add_apis(apis)
+                interaction.behaviour = behaviour
+                interaction.apis_called = apis_called_interaction
+                interaction.tested = True
+                break
 
     logger.info("Discovery complete")
 

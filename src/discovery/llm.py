@@ -2,29 +2,9 @@ from src.log import logger
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import Any, Dict, List
 
-from src.discovery.messages import api_system_message, interaction_system_message
+from src.discovery.interaction import Interaction
+from src.discovery.messages import api_system_message, interaction_ranking_system_message
 import json
-
-
-def llm_parse_interactions(cf, soup) -> List[Dict]:
-    """
-    Parse the interactions of the given soup, using LLM.
-    """
-    chain = cf.model | cf.parser
-    logger.debug("Parsing interactions")
-    messages = [
-        SystemMessage(interaction_system_message),
-        HumanMessage(soup.prettify()),
-    ]
-    interactions = chain.invoke(messages)
-
-    try:
-        interactions_json = json.loads(interactions)
-    except json.JSONDecodeError:
-        logger.error(f"Failed to parse interactions JSON: {interactions}")
-        interactions_json = []
-
-    return interactions_json
 
 
 def llm_parse_requests_for_apis(cf, page_requests) -> List[Dict]:
@@ -47,3 +27,25 @@ def llm_parse_requests_for_apis(cf, page_requests) -> List[Dict]:
         apis_json = []
 
     return apis_json
+
+
+
+def llm_rank_interactions(cf, interactions: List[Interaction]) -> List[Dict[str, Any]]:
+    """
+    Rank the given interactions using the LLM model to determine the most important interactions.
+    """
+    chain = cf.model | cf.parser
+    logger.debug("Ranking interactions")
+    messages = [
+        SystemMessage(interaction_ranking_system_message),
+        HumanMessage(json.dumps([interaction.to_dict() for interaction in interactions])),
+    ]
+    ranked_interactions = chain.invoke(messages)
+
+    try:
+        ranked_interactions_json = json.loads(ranked_interactions)
+    except json.JSONDecodeError:
+        logger.error(f"Failed to parse ranked interactions JSON: {ranked_interactions}")
+        ranked_interactions_json = []
+
+    return ranked_interactions_json

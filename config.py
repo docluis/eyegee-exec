@@ -28,10 +28,14 @@ class Config:
 
         ####### Target #######
         website = "http://127.0.0.1:3000"
+        # website = "http://localhost:80/"
 
         parsed_url = urlparse(website)
         self.target = f"{parsed_url.scheme}://{parsed_url.netloc}"
         self.initial_path = parsed_url.path
+
+        ####### Interactions #######
+        self.interaction_test_limit = 10 # the maximum number of interactions to test
 
         ####### Check Config #######
         self.check_config()

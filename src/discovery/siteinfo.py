@@ -1,5 +1,6 @@
 import json
 from urllib.parse import urlparse
+from src.discovery.interaction import Interaction
 from src.discovery.page import Page
 from src.discovery.api import Api
 from src.log import logger
@@ -19,6 +20,8 @@ class SiteInfo:
         self.pages_hashes = []
 
         self.apis = []
+
+        self.interactions = []
 
     def check_if_visited(self, soup: BeautifulSoup) -> bool:
         page_hash = hash(soup)
@@ -89,3 +92,34 @@ class SiteInfo:
                             found.get_param(key).add_observed_value(value)
 
         return added_apis
+
+    def add_interactions(self, interactions: List[dict]) -> List[str]:
+        """
+        Add the given list of interactions to the SiteInfo Object.
+
+        Returns a list of the added Interaction Names.
+        """
+        interaction_names = []
+        for interaction in interactions:
+            interaction_names.append(interaction["name"])
+            # check if the interaction already exists in self.interactions
+            found = False
+            for i in self.interactions:
+                if i.name == interaction["name"]:
+                    found = True
+                    break
+            if not found:
+                interaction_obj = Interaction(
+                    interaction["name"],
+                    interaction["description"],
+                    interaction["input_fields"], # json.loads?
+                )
+                self.interactions.append(interaction_obj)
+        return interaction_names
+    
+    def get_paths_with_interaction(self, interaction_name: str) -> List[str]:
+        paths = []
+        for page in self.pages:
+            if interaction_name in page.interaction_names:
+                paths.append(page.path)
+        return paths

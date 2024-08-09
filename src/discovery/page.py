@@ -10,13 +10,13 @@ class Page:
         soup: BeautifulSoup,
         summary: str,
         outlinks: List[str],
-        interactions: List[Dict],  # TODO: change to list[Interaction] ?
-        apis_called: List[Dict],  # TODO: change to list[API] ?
+        interaction_names: List[str],
+        apis_called: List[str],
     ) -> None:
         self.path = path
         self.title = title
         self.soup = soup
         self.summary = summary
         self.outlinks = outlinks
-        self.interactions = interactions
+        self.interaction_names = interaction_names
         self.apis_called = apis_called

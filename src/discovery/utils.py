@@ -59,14 +59,16 @@ def output_to_file(si: SiteInfo) -> None:
     """
     with open("output.txt", "w") as file:
         for page in si.pages:
-            output = "--------------------------------\n"
+            output = "---------- PAGES ----------\n"
+            output += "--------------------------------\n"
             output += f"Path: {page.path}\n"
             output += f"Title: {page.title}\n"
             output += f"Summary: {page.summary}\n"
-            output += f"Interactions: {page.interactions}\n"
+            output += f"Interactions: {page.interaction_names}\n"
             output += f"APIs Called: {page.apis_called}\n"
             output += f"Outlinks: {page.outlinks}\n\n"
             file.write(output)
+        output = "---------- APIS ----------\n"
         for api in si.apis:
             output = "--------------------------------\n"
             output += f"Method: {api.method}\n"
@@ -75,5 +77,17 @@ def output_to_file(si: SiteInfo) -> None:
                 output += f"Param: {param.name}\n"
                 output += f"Observed Values: {param.observed_values}\n"
                 output += f"Param Type: {param.param_type}\n"
+            file.write(output)
+        output = "---------- INTERACTIONS ----------\n"
+        for interaction in si.interactions:
+            output += "--------------------------------\n"
+            output += f"Name: {interaction.name}\n"
+            output += f"Description: {interaction.description}\n"
+            for input_field in interaction.input_fields:
+                output += f"Input Field Name: {input_field["name"]}\n"
+                output += f"Input Field Type: {input_field["type"]}\n"
+            output += f"Tested: {"True" if interaction.tested else "False"}\n"
+            output += f"Behaviour: {interaction.behaviour}\n"
+            output += f"APIs Called: {interaction.apis_called}\n"
             file.write(output)
     logger.info("Output written to output.txt")

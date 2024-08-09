@@ -39,6 +39,9 @@ Example Output:
 ]
 
 Return an empty list [] if no interactions are found. Do not include markdown backticks in your output.
+
+If the same interaction appears multiple times, include it multiple times with the same attributes.
+Do not include links or other static elements in your output (only interactive elements that may submit data to the server).
 """
 
 
@@ -70,4 +73,30 @@ Example Output:
 ]
 
 Return an empty list [] if no APIs are found. Do not include markdown backticks in your output.
+
+Also: do not include the GET calls to the website itself in your output. Only include calls to APIs.
+"""
+
+
+interaction_ranking_system_message = """
+Your are an AI model that has been tasked with ranking interactions based on their importance to the website's functionality.
+
+Interactions with a bigger impact on the website's functionality and security should be ranked higher. For example, a "Login" interaction is more important than a "Contact Us" interaction.
+
+If there are multiple interactions with the same functionality, include one of them with higher importance than the others.
+
+The aim is to create a testing order for the interactions, where the most important interactions are tested first.
+
+Return the interactions in a List format, where the first element is the most important interaction and the last element is the least important interaction.
+
+Example Output:
+[
+    "Login Form",
+    "Search Bar",
+    "Product Button A",
+    "Contact Us Form",
+    "Product Button B",
+]
+
+Return an empty list [] if no interactions are found. Do not include markdown backticks in your output.
 """
