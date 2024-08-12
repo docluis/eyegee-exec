@@ -51,3 +51,6 @@ To visualize the results as a graph, execute the graph module:
 ```bash
 python eyegee-exec.py -g
 ```
+
+## Test this tool
+An example web application to test this tool can be accessed under: https://github.com/docluis/dentist
