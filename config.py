@@ -13,7 +13,8 @@ class Config:
         load_dotenv()
 
         ####### Selenium #######
-        self.service = ChromeService(executable_path="/usr/bin/chromedriver")
+        self.chromedriver_path = "/usr/bin/chromedriver"
+        self.service = ChromeService(executable_path=self.chromedriver_path)
         self.options = ChromeOptions()
         self.options.add_argument("--lang=en")
         self.options.add_experimental_option("perfLoggingPrefs", {"enableNetwork": True})
