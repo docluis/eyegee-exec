@@ -10,7 +10,7 @@ Results are presented as a graph, illustrating connections between pages, API ca
 
 > Note: Note: While eyegee-exec should be compatible with other vendors or local LLMs, it has been tested only with OpenAI's cloud models to date.
 
-## How to run
+## How to Run
 
 This tool requires the installation of the `ChromeDriver` application. On Arch Linux-based operating systems, it can be installed using AUR package managers. Please refer to the official [ChromeDriver documentation](https://developer.chrome.com/docs/chromedriver/get-started) for installation instructions on other operating systems.
 
