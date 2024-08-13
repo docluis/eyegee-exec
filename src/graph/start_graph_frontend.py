@@ -17,6 +17,7 @@ def start_graph_frontend():
             stderr=subprocess.PIPE,
         )
         logger.info("Graph frontend started")
+        logger.info("View the frontend at http://localhost:9777")
         return process
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to start frontend: {e}")
