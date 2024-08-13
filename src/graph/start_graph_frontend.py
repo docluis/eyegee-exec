@@ -9,7 +9,9 @@ def start_graph_frontend():
     try:
         subprocess.run(["npm", "install"], check=True, cwd=graph_frontend_path)
         process = subprocess.Popen(
-            ["npm", "start"],
+            # ["npm", "start"],
+            # start on port 9777
+            ["npm", "run", "dev", "--", "--port", "9777"],
             cwd=graph_frontend_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

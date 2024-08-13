@@ -1,22 +1,31 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import { useTheme } from "next-themes";
+import { Card, CardHeader, CardBody, CardFooter, Chip } from "@nextui-org/react";
 
 const NodeInfoBox = ({ node }) => {
+  const { theme } = useTheme();
   const getNodeContent = (node) => {
     switch (node.type) {
       case "page":
         return (
-          <div>
-            <h3>{node.label} (Page)</h3>
-            <h4>Summary</h4>
-            <p>{node.summary}</p>
-            <h4>Outbound Links</h4>
-            <ul>
-              {node.outlinks.map((link) => (
-                <li key={link}>{link}</li>
-              ))}
-            </ul>
-          </div>
+          <Card className="w-[500px] h-[700px]">
+            <CardHeader className="pb-0 pt-4 px-4 flex-row items-start gap-4">
+              <Chip className="text-tiny uppercase font-bold">Page</Chip>
+              <h2 className="font-bold text-large">{node.label}</h2>
+            </CardHeader>
+
+            <CardBody className="overflow-visible py-2">
+              <h4 className="pb-0 pt-4 font-bold">Summary</h4>
+              <p>{node.summary}</p>
+              <h4 className="pb-0 pt-4 font-bold">Outbound Links</h4>
+              <ul>
+                {node.outlinks.map((link) => (
+                  <li key={link}>{link}</li>
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
         );
       case "interaction":
         return (
@@ -44,8 +53,7 @@ const NodeInfoBox = ({ node }) => {
             <ul>
               {node.params.map((param) => (
                 <li key={param.name}>
-                  {param.name} (type:{param.type})
-                  {/* observed values */}
+                  {param.name} (type:{param.type}){/* observed values */}
                   <ul>
                     {param.observed_values.map((value) => (
                       <li key={value}>{value}</li>
@@ -66,22 +74,19 @@ const NodeInfoBox = ({ node }) => {
     }
   };
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: 10,
-        right: 10,
-        background: "white",
-        padding: "10px",
-        border: "1px solid black",
-        // make is scrollable
-        overflow: "auto",
-        height: "90%",
-        width: 500,
-      }}
-    >
-      {getNodeContent(node)}
-    </div>
+    // <div
+    //   style={{
+    //     padding: "10px",
+    //     border: `1px solid ${theme == "light" ? "black" : "white"}`,
+    //     // make is scrollable
+    //     backgroundColor: theme == "light" ? "white" : "black",
+    //     overflow: "auto",
+    //     height: 700,
+    //     width: 500,
+    //   }}
+    // >
+    getNodeContent(node)
+    // </div>
   );
 };
 

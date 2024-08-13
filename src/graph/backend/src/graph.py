@@ -94,7 +94,7 @@ class Graph:
                 }
                 links.append(edge)
 
-        # add api links
+        # add api links from pages
         for page in si.pages:
             for page_api_called in page.apis_called:  # passive api calls
                 edge = {
@@ -103,6 +103,7 @@ class Graph:
                     "target": page_api_called,
                 }
                 links.append(edge)
+        # add api links from interactions
         for interaction in si.interactions:
             for interaction_api_called in interaction.apis_called:  # active api calls
                 edge = {

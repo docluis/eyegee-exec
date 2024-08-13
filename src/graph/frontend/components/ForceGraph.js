@@ -1,14 +1,14 @@
 import React, { useRef, useState, useEffect } from "react";
 import * as d3 from "d3";
-import NodeInfoBox from "./NodeInfoBox.js";
+import { useTheme } from "next-themes";
 
-const ForceGraph = ({ nodesData, linksData }) => {
+const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
+  const { theme } = useTheme();
   const svgRef = useRef();
-  const [selectedNode, setSelectedNode] = useState(null);
 
   useEffect(() => {
-    const width = 928;
-    const height = 680;
+    const width = 1400;
+    const height = 700;
 
     const color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -24,8 +24,8 @@ const ForceGraph = ({ nodesData, linksData }) => {
           .id((d) => d.id)
           .distance(100)
       )
-      .force("charge", d3.forceManyBody().strength(-1000))
-      .force("x", d3.forceX())
+      .force("charge", d3.forceManyBody().strength(-600))
+      .force("x", d3.forceX().strength(0.1).x(width * -0.2))
       .force("y", d3.forceY());
 
     const svg = d3
@@ -75,7 +75,7 @@ const ForceGraph = ({ nodesData, linksData }) => {
       .attr("dy", 0)
       .attr("dx", 20)
       .text((d) => d.label)
-      .style("fill", "black")
+      .style("fill", theme == "light" ? "black" : "white")
       .attr("font-size", "14px");
 
     node.call(
@@ -143,22 +143,9 @@ const ForceGraph = ({ nodesData, linksData }) => {
     }
 
     return () => simulation.stop();
-  }, [nodesData, linksData]);
+  }, [nodesData, linksData, theme]);
 
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "80%",
-        overflow: "hidden",
-        border: "1px solid black",
-      }}
-    >
-      <svg ref={svgRef}></svg>
-      {selectedNode && <NodeInfoBox node={selectedNode} />}
-    </div>
-  );
+  return <svg ref={svgRef}></svg>;
 };
 
 export default ForceGraph;
