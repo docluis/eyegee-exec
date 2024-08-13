@@ -11,7 +11,7 @@ const NodeInfoBox = ({ node }) => {
         return (
           <Card className="w-[500px] h-[700px]">
             <CardHeader className="pb-0 pt-4 px-4 flex-row items-start gap-4">
-              <Chip className="text-tiny uppercase font-bold">Page</Chip>
+              <Chip className="text-tiny uppercase font-bold" color="mycolor">Page</Chip>
               <h2 className="font-bold text-large">{node.label}</h2>
             </CardHeader>
 
