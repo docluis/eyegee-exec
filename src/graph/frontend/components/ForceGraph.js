@@ -7,6 +7,12 @@ const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
   const svgRef = useRef();
 
   useEffect(() => {
+    const customColors = {
+      page: theme == "dark" ? "#99C7FB" : "#006FEE",
+      interaction: theme == "dark" ? "#C9A9E9" : "#7828C8",
+      api: theme == "dark" ? "#FAA0BF" : "#F31260",
+    };
+
     const width = 1400;
     const height = 700;
 
@@ -25,7 +31,13 @@ const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
           .distance(100)
       )
       .force("charge", d3.forceManyBody().strength(-600))
-      .force("x", d3.forceX().strength(0.1).x(width * -0.2))
+      .force(
+        "x",
+        d3
+          .forceX()
+          .strength(0.1)
+          .x(width * -0.2)
+      )
       .force("y", d3.forceY());
 
     const svg = d3
@@ -59,9 +71,9 @@ const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
       .append("circle")
       .attr("r", 15)
       .attr("fill", (d) => {
-        if (d.type === "page") return "lightblue";
-        if (d.type === "api") return "red";
-        if (d.type === "interaction") return "purple";
+        if (d.type === "page") return customColors.page;
+        if (d.type === "api") return customColors.api;
+        if (d.type === "interaction") return customColors.interaction;
         return color(d.group);
       })
       .on("click", (event, d) => setSelectedNode(d));
