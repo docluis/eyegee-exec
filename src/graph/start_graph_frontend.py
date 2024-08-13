@@ -2,14 +2,14 @@ import os
 import subprocess
 from src.log import logger
 
-graph_frontend_path = "src/graph_frontend"
+graph_frontend_path = "src/graph/frontend"
 
 
 def start_graph_frontend():
     try:
         subprocess.run(["npm", "install"], check=True, cwd=graph_frontend_path)
         process = subprocess.Popen(
-            ["npm", "run", "dev"],
+            ["npm", "start"],
             cwd=graph_frontend_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

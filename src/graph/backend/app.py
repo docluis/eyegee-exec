@@ -2,7 +2,7 @@
 from flask import Flask
 from flask_restful import Api, Resource
 from flask_cors import CORS
-from src.graph_backend.src.graph import Graph
+from src.graph.backend.src.graph import Graph
 
 def init_app():
     app = Flask(__name__)

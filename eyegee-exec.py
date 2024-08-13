@@ -2,18 +2,13 @@
 import threading
 import time
 from config import Config
-from src.graph_backend.app import init_app
+from src.graph.backend.app import init_app
 from src.discovery.discovery import discover
 from src.discovery.utils import output_to_file
 from src.log import logger
-from src.start_graph_frontend import start_graph_frontend
+from src.graph.start_graph_frontend import start_graph_frontend
 import pickle
 import argparse
-
-
-def start_graph_backend():
-    app = init_app()
-    app.run(port=9778, debug=True)
 
 
 def start_servers():
@@ -25,7 +20,8 @@ def start_servers():
     time.sleep(5)
 
     # Start the backend in the main thread
-    start_graph_backend()
+    app = init_app()
+    app.run(port=9778, debug=True)
 
     # Wait for the frontend thread to complete
     frontend_thread.join()
