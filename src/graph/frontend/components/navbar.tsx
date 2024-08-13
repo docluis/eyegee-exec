@@ -79,7 +79,7 @@ export const Navbar = () => {
         className="hidden sm:flex basis-1/5 sm:basis-full"
         justify="end"
       >
-        <NavbarItem className="hidden sm:flex gap-2">
+        {/* <NavbarItem className="hidden sm:flex gap-2"> */}
           {/* <Link isExternal aria-label="Twitter" href={siteConfig.links.twitter}>
             <TwitterIcon className="text-default-500" />
           </Link>
@@ -90,7 +90,7 @@ export const Navbar = () => {
             <GithubIcon className="text-default-500" />
           </Link> */}
           <ThemeSwitch />
-        </NavbarItem>
+        {/* </NavbarItem> */}
         {/* <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem> */}
         {/* <NavbarItem className="hidden md:flex">
           <Button
