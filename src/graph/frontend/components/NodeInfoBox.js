@@ -15,9 +15,13 @@ import {
   TableColumn,
   TableRow,
   TableCell,
+  Code,
+  Button,
 } from "@nextui-org/react";
+import { md_components } from "./md_components";
+import { XIcon } from "./icons";
 
-const NodeInfoBox = ({ node }) => {
+const NodeInfoBox = ({ selectedNode, setSelectedNode }) => {
   const { theme } = useTheme();
   const getColor = (type) => {
     switch (type) {
@@ -34,36 +38,58 @@ const NodeInfoBox = ({ node }) => {
     }
   };
 
-  const getNodeContent = (node) => {
-    switch (node.type) {
+  const getNodeContent = (selectedNode) => {
+    console.log(selectedNode);
+    switch (selectedNode.type) {
       case "page":
         return (
           <>
             <h4 className="pb-0 pt-4 font-bold">Summary</h4>
-            <p>{node.summary}</p>
+            <p>{selectedNode.summary}</p>
             <h4 className="pb-0 pt-4 font-bold">Outbound Links</h4>
-            <ul>
-              {node.outlinks.map((link) => (
+            {/* <ul>
+              {selectedNode.outlinks.map((link) => (
                 <li key={link}>{link}</li>
               ))}
-            </ul>
+            </ul> */}
+            {/* list the outgoing links as buttons with setSelectedNode */}
+            {/* TODO: seperate internal and external links */}
+            <div className="flex flex-wrap gap-2"> 
+              {selectedNode.outlinks.map((link) => (
+                <Button
+                  key={link}
+                  variant="ghost"
+                  onClick={() => {}} // TODO: setSelectedNode with the link
+                >
+                  {link}
+                </Button>
+              ))}
+            </div>
           </>
         );
       case "interaction":
         return (
           <>
             <h4 className="pb-0 pt-4 font-bold">Description</h4>
-            <p>{node.description}</p>
-            <h4 className="pb-0 pt-4 font-bold">Inputs</h4>
+            <p>{selectedNode.description}</p>
+            {/* <h4 className="pb-0 pt-4 font-bold">Inputs</h4>
             <ul>
-              {node.input_fields.map((input) => (
+              {selectedNode.input_fields.map((input) => (
                 <li key={input.name}>
                   {input.name} (type:{input.type})
                 </li>
               ))}
-            </ul>
+            </ul> */}
             <h4 className="pb-0 pt-4 font-bold">Behavior</h4>
-            <ReactMarkdown>{node.behaviour}</ReactMarkdown>
+            {/* make it scrollable, make height dynamic */}
+            <Card className="w-full h-[500px] overflow-auto">
+              {/* add line distance */}
+              <CardBody className="pb-0 pt-4 px-8 w-full">
+                <ReactMarkdown components={md_components}>
+                  {selectedNode.behaviour}
+                </ReactMarkdown>
+              </CardBody>
+            </Card>
           </>
         );
       case "api":
@@ -85,8 +111,8 @@ const NodeInfoBox = ({ node }) => {
               </TableHeader>
               <TableBody emptyContent={"No parameters Observed."}>
                 {/* print the params */}
-                {console.log(node.params)}
-                {node.params.map((param) => (
+                {console.log(selectedNode.params)}
+                {selectedNode.params.map((param) => (
                   <TableRow key={param.name}>
                     <TableCell>{param.type}</TableCell>
                     <TableCell>{param.name}</TableCell>
@@ -100,8 +126,8 @@ const NodeInfoBox = ({ node }) => {
       default:
         return (
           <>
-            <h3>{node.label}</h3>
-            <p>Additional information about the node can go here.</p>
+            <h3>{selectedNode.label}</h3>
+            <p>Node Does Not Exist</p>
           </>
         );
     }
@@ -119,28 +145,36 @@ const NodeInfoBox = ({ node }) => {
     //   }}
     // >
     <Card className="w-[500px] h-[700px]">
-      <CardHeader className="pb-0 pt-4 px-4 flex-row items-start gap-4">
+      <CardHeader className="pb-0 pt-4 px-4 flex-row justify-between">
         <Chip
           classNames={{
-            base: `${getColor(node.type)} text-tiny uppercase font-bold`,
+            base: `${getColor(selectedNode.type)} text-tiny uppercase font-bold`,
             content: theme == "light" ? "text-white" : "text-black",
           }}
         >
-          {node.type}
+          {selectedNode.type}
         </Chip>
-        <h2 className="font-bold text-large">{node.label}</h2>
+        <h2 className="font-bold text-large">{selectedNode.label}</h2>
+        {/* icon to close aka set selected node="" */}
+        <Button
+          isIconOnly
+          variant="light"
+          onClick={() => setSelectedNode(null)}
+        >
+          <XIcon />
+        </Button>
       </CardHeader>
 
       <CardBody className="overflow-visible py-2">
         {/* <h4 className="pb-0 pt-4 font-bold">Summary</h4>
-              <p>{node.summary}</p>
+              <p>{selectedNode.summary}</p>
               <h4 className="pb-0 pt-4 font-bold">Outbound Links</h4>
               <ul>
-                {node.outlinks.map((link) => (
+                {selectedNode.outlinks.map((link) => (
                   <li key={link}>{link}</li>
                 ))}
               </ul> */}
-        {getNodeContent(node)}
+        {getNodeContent(selectedNode)}
       </CardBody>
     </Card>
     // </div>

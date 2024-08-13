@@ -7,16 +7,8 @@ const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
   const svgRef = useRef();
 
   useEffect(() => {
-    const customColors = {
-      page: theme == "dark" ? "#99C7FB" : "#006FEE",
-      interaction: theme == "dark" ? "#C9A9E9" : "#7828C8",
-      api: theme == "dark" ? "#FAA0BF" : "#F31260",
-    };
-
     const width = 1400;
     const height = 700;
-
-    const color = d3.scaleOrdinal(d3.schemeCategory10);
 
     const links = linksData.map((d) => ({ ...d }));
     const nodes = nodesData.map((d) => ({ ...d }));
@@ -70,12 +62,7 @@ const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
       .enter()
       .append("circle")
       .attr("r", 15)
-      .attr("fill", (d) => {
-        if (d.type === "page") return customColors.page;
-        if (d.type === "api") return customColors.api;
-        if (d.type === "interaction") return customColors.interaction;
-        return color(d.group);
-      })
+      .attr("fill", (d) => getColorNode(d, theme)) // Set initial color
       .on("click", (event, d) => setSelectedNode(d));
 
     const text = zoomGroup
@@ -98,30 +85,12 @@ const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
         .on("end", dragended)
     );
 
-    function debounce(func, wait) {
-      let timeout;
-      return function (...args) {
-        const context = this;
-        const later = () => {
-          timeout = null;
-          func.apply(context, args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
-
     const zoom = d3
       .zoom()
       .scaleExtent([0.1, 4]) // Zoom scale limits
-      .on(
-        "zoom",
-        debounce((event) => {
-          zoomGroup.attr("transform", event.transform);
-          // Restart the simulation after zooming
-          simulation.alpha(1).restart();
-        }, 1) // TODO: Performance optimization?
-      );
+      .on("zoom", (event) => {
+        zoomGroup.attr("transform", event.transform);
+      });
 
     svg.call(zoom);
 
@@ -155,7 +124,35 @@ const ForceGraph = ({ nodesData, linksData, setSelectedNode }) => {
     }
 
     return () => simulation.stop();
-  }, [nodesData, linksData, theme]);
+  }, [nodesData, linksData]);
+
+  // Separate useEffect to handle theme changes
+  useEffect(() => {
+    const customColors = {
+      page: theme === "dark" ? "#99C7FB" : "#006FEE",
+      interaction: theme === "dark" ? "#C9A9E9" : "#7828C8",
+      api: theme === "dark" ? "#FAA0BF" : "#F31260",
+    };
+
+    // Select all nodes and update their fill color based on theme
+    d3.select(svgRef.current)
+      .selectAll("circle")
+      .attr("fill", (d) => getColorNode(d, theme));
+
+    // Update text color
+    d3.select(svgRef.current)
+      .selectAll("text")
+      .style("fill", theme === "light" ? "black" : "white");
+  }, [theme]);
+
+  // Helper function to get node color based on type and theme
+  const getColorNode = (node, theme) => {
+    if (node.type === "page") return theme === "dark" ? "#99C7FB" : "#006FEE";
+    if (node.type === "api") return theme === "dark" ? "#FAA0BF" : "#F31260";
+    if (node.type === "interaction")
+      return theme === "dark" ? "#C9A9E9" : "#7828C8";
+    return d3.schemeCategory10[node.group % 10]; // Default color
+  };
 
   return <svg ref={svgRef}></svg>;
 };

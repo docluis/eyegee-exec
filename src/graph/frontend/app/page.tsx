@@ -59,7 +59,7 @@ export default function Home() {
       </div>
       {selectedNode && (
         <div className="absolute right-0 top-0">
-          <NodeInfoBox node={selectedNode} />
+          <NodeInfoBox selectedNode={selectedNode} setSelectedNode={setSelectedNode} />
         </div>
       )}
     </section>
