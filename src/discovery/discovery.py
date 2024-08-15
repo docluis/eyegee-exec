@@ -11,10 +11,9 @@ from src.discovery.llm import (
 )
 from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
-from src.discovery.utils import get_performance_logs, parse_page_requests, parse_links
+from src.discovery.utils import filter_html, get_performance_logs, parse_page_requests, parse_links
 from src.log import logger
 from src.discovery.summarizer import LLM_Summarizer
-from src.discovery.api import Api
 
 
 def discover(cf: Config) -> SiteInfo:
@@ -39,7 +38,8 @@ def discover(cf: Config) -> SiteInfo:
         cf.driver.get(f"{cf.target}{path}")
         time.sleep(cf.selenium_rate)
 
-        soup = BeautifulSoup(cf.driver.page_source, "html.parser")
+        originial_soup = BeautifulSoup(cf.driver.page_source, "html.parser")
+        soup = filter_html(originial_soup)
 
         si.paths_visited.append(path)
         if si.check_if_visited(soup):
@@ -58,7 +58,7 @@ def discover(cf: Config) -> SiteInfo:
         page = Page(
             path=path,
             title=soup.title.string,
-            soup=soup,
+            original_soup=soup,
             summary=llm_summarizer.create_summary(soup),
             outlinks=parse_links(soup),
             interaction_names=interaction_names,

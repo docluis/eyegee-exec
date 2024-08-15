@@ -14,7 +14,7 @@ Keep the summary to a maximum of 2-4 sentences.
 """
 
 interaction_system_message = """
-Your task is to parse the interactions on the provided webpage. Interactions are any ways a user can submit information to the website, including but not limited to buttons, forms, and other JavaScript interactive elements. Do not include links or other static elements.
+Your task is to parse the interactions for each of the the provided pages individually. Interactions are any ways a user can submit information to the website, including but not limited to buttons, forms, and other JavaScript interactive elements. Do not include links or other static elements.
 Return the interactions in raw JSON format, where each interaction has the following attributes:
 
 name: A descriptive name for the interaction.
@@ -46,8 +46,10 @@ Example Output:
 
 Return an empty list [] if no interactions are found. Do not include markdown backticks in your output.
 
-If the same interaction appears multiple times, include it multiple times with the same attributes.
-Do not include links or other static elements in your output (only interactive elements that may submit data to the server).
+If an interaction has been parsed on a previous page, include it with the same name, description and input_fields as the previous page.
+For multiple buttons with the same functionality, include the group of buttons as a single interaction.
+
+IMPORTANT: Do not include links or other static elements in your output (only interactive elements that may submit data to the server).
 """
 
 
