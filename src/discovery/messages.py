@@ -5,6 +5,12 @@ You will be given a page in HTML format. Create a short and consice summary that
 Focus on the main funcionality of only the provided page not others. Ignore boilerplate elements and code.
 
 Avoid repeating information. Do not make assumptions about the content of other pages on the website.
+
+Only include the most important information in your summary.
+
+The summary does not need to include the function of the entire website, only of the the provided page's function specifically.
+
+Keep the summary to a maximum of 2-4 sentences.
 """
 
 interaction_system_message = """

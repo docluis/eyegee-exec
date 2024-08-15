@@ -16,41 +16,57 @@ This tool requires the installation of the `ChromeDriver` application. On Arch L
 
 1. **Install ChromeDriver**
 
-Ensure ChromeDriver is installed on your system.
+Ensure ChromeDriver is installed on your system. This is required for the discovery process.
 
-2. **Create and Activate a Python Virtual Environment**
+2. **Install Node.js and npm**
+
+Ensure Node.js and npm are installed on your system and configured in your system's PATH environment variable. This is required for the webserver with the graph interface.
+
+3. **Create and Activate a Python Virtual Environment**
+
 ```bash
 python -m venv venv
 source venv/bin/activate
 ```
-3. **Install the requirements**
+
+4. **Install the requirements**
+
 ```bash
 pip install -r requirements.txt
 ```
-4. **Setup the Environment Variables**
-Create a .env file and add your Open AI Key:
+
+5. **Setup the Environment Variables**
+   Create a .env file and add your Open AI Key:
+
 ```bash
 touch .env
 vim .env
 # Add the following line to the file:
 OPENAI_API_KEY=<YOUR_KEY_HERE>
 ```
-5. **Configure the Application**
-Adjust the configuration in `config.py`:
+
+6. **Configure the Application**
+   Adjust the configuration in `config.py`:
+
 ```bash
 vim config.py
 # Set the target website and other settings such as chromedriver_path
 ```
-6. **Execute the Discovery Module**
-Run the discovery module to start mapping the web application:
+
+7. **Execute the Discovery Module**
+   Run the discovery module to start mapping the web application:
+
 ```bash
 python eyegee-exec.py -d
 ```
-7. **Visualize the Results**
-To visualize the results as a graph, execute the graph module:
+
+8. **Visualize the Results**
+   To visualize the results as a graph, execute the graph module:
+
 ```bash
 python eyegee-exec.py -g
 ```
 
 ## Test this tool
+
 An example web application to test this tool can be accessed under: https://github.com/docluis/dentist
