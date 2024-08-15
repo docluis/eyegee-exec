@@ -26,6 +26,7 @@ class InteractionAgent:
         self.app = self.initialize_app()
         self.p_reqs = []
         self.last_page_soup = None
+        self.current_path = None
 
     def initialize_tools(self):
         # Define tools for interaction with the website using Selenium
@@ -163,7 +164,9 @@ class InteractionAgent:
 
             Returns the page source as a string.
             """
-            logger.info(f"Getting page source with filtered: {'True' if filtered else 'False'}")
+            logger.info(
+                f"Getting page source with filtered: {'True' if filtered else 'False'}"
+            )
 
             res = BeautifulSoup(self.cf.driver.page_source, "html.parser")
             self.last_page_soup = res
@@ -188,7 +191,9 @@ class InteractionAgent:
 
             Returns the page source diff as a string.
             """
-            logger.info(f"Getting page source diff with filtered: {'True' if filtered else 'False'}")
+            logger.info(
+                f"Getting page source diff with filtered: {'True' if filtered else 'False'}"
+            )
             before = self.last_page_soup
             now = BeautifulSoup(self.cf.driver.page_source, "html.parser")
 
@@ -217,7 +222,7 @@ class InteractionAgent:
             """
             logger.info("Getting outgoing requests")
             p_logs = get_performance_logs(self.cf.driver)
-            p_reqs = parse_page_requests("", "", p_logs)
+            p_reqs = parse_page_requests(self.cf.target, self.current_path, p_logs)
             self.p_reqs.extend(p_reqs)
 
             res = json.dumps(p_reqs, indent=4)
@@ -277,6 +282,7 @@ class InteractionAgent:
     def interact(self, path, interaction):
         self.p_reqs = []  # reset the page request list
         self.last_page_soup = None  # reset the last page soup
+        self.current_path = path
         prompt = interactionagent_inital_prompt_template.format(
             url=f"{self.cf.target}{path}", interaction=interaction
         )

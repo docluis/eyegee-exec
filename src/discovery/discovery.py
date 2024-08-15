@@ -11,7 +11,12 @@ from src.discovery.llm import (
 )
 from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
-from src.discovery.utils import filter_html, get_performance_logs, parse_page_requests, parse_links
+from src.discovery.utils import (
+    filter_html,
+    get_performance_logs,
+    parse_page_requests,
+    parse_links,
+)
 from src.log import logger
 from src.discovery.summarizer import LLM_Summarizer
 
@@ -48,8 +53,11 @@ def discover(cf: Config) -> SiteInfo:
         p_logs = get_performance_logs(cf.driver)
         p_reqs = parse_page_requests(cf.target, path, p_logs)
 
-        apis = llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4))
-        apis_called_passive = si.add_apis(apis)
+        if len(p_reqs) > 0:
+            apis = llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4))
+            apis_called_passive = si.add_apis(apis)
+        else:
+            apis_called_passive = si.add_apis([])
 
         interactions = llm_interactionparser.parse_interactions(soup)
         interaction_names = si.add_interactions(interactions)
@@ -67,14 +75,6 @@ def discover(cf: Config) -> SiteInfo:
 
         for interaction_name in page.interaction_names:
             logger.info(f"Found Interaction: {interaction_name}")
-            # logger.info(f"Testing Interaction: {interaction.get('name')}")
-            # behaviour, all_p_reqs = interaction_agent.interact(
-            #     path=path, interaction=json.dumps(interaction)
-            # )
-            # apis = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
-            # apis_called_interaction = si.add_apis(apis)
-            # interaction["behaviour"] = behaviour
-            # interaction["apis_called"] = apis_called_interaction
 
         si.add_paths_to_todo(page.outlinks)
         si.add_page(page)
@@ -94,8 +94,13 @@ def discover(cf: Config) -> SiteInfo:
                 behaviour, all_p_reqs = interaction_agent.interact(
                     path=path[0], interaction=json.dumps(interaction.to_dict())
                 )
-                apis = llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
-                apis_called_interaction = si.add_apis(apis)
+                if len(all_p_reqs) > 0:
+                    apis = llm_parse_requests_for_apis(
+                        cf, json.dumps(all_p_reqs, indent=4)
+                    )
+                    apis_called_interaction = si.add_apis(apis)
+                else:
+                    apis_called_interaction = si.add_apis([])
                 interaction.behaviour = behaviour
                 interaction.apis_called = apis_called_interaction
                 interaction.tested = True

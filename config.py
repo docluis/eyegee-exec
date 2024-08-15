@@ -23,7 +23,7 @@ class Config:
         self.selenium_rate = 0.5
 
         ####### Model #######
-        self.model = ChatOpenAI(model="gpt-4o-mini")
+        self.model = ChatOpenAI(model="gpt-4o")
         self.parser = StrOutputParser()
 
 

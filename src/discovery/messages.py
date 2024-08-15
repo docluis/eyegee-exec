@@ -10,7 +10,7 @@ Only include the most important information in your summary.
 
 The summary does not need to include the function of the entire website, only of the the provided page's function specifically.
 
-Keep the summary to a maximum of 2-4 sentences.
+Keep the summary to a maximum of 2-3 sentences. The summary has to be neutral and objective.
 """
 
 interaction_system_message = """
@@ -80,9 +80,7 @@ Example Output:
     },
 ]
 
-Return an empty list [] if no APIs are found. Do not include markdown backticks in your output.
-
-Also: do not include the GET calls to the website itself in your output. Only include calls to APIs.
+Return an empty list [] if no APIs calls are found. Do not include markdown backticks in your output.
 """
 
 

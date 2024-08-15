@@ -7,6 +7,18 @@ from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
 from src.log import logger
 
+remove_file_extensions = [
+    ".js",  # TODO: could remove API requests in Edge Cases
+    ".css",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".svg",
+    ".gif",
+    ".ico",
+    ".woff",
+    ".woff2",
+]
 
 def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> List[dict]:
     """
@@ -16,12 +28,18 @@ def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> List[dict
     for log in p_logs:
         log = json.loads(log["message"])["message"]
         if log["method"] == "Network.requestWillBeSent":
-            # TODO: check if this is necessary, otherwise remove also params
-            # if (
-            #     log["params"]["request"]["url"] == target + path
-            #     and log["params"]["request"]["method"] == "GET"
-            # ):  # ignore requests to the same page
-            #     continue
+            if (
+                log["params"]["request"]["url"] == target + path
+                and log["params"]["request"]["method"] == "GET"
+            ):
+                continue # ignore initial page request
+            if any(
+                [
+                    log["params"]["request"]["url"].endswith(ext)
+                    for ext in remove_file_extensions
+                ]
+            ):
+                continue # ignore requests with file extensions
             page_request = {
                 "url": log["params"]["request"]["url"],
                 "method": log["params"]["request"]["method"],
