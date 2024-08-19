@@ -7,7 +7,7 @@ class Page:
         self,
         path: str,
         title: str,
-        soup: BeautifulSoup,
+        original_soup: BeautifulSoup,
         summary: str,
         outlinks: List[str],
         interaction_names: List[str],
@@ -15,7 +15,7 @@ class Page:
     ) -> None:
         self.path = path
         self.title = title
-        self.soup = soup
+        self.original_soup = original_soup
         self.summary = summary
         self.outlinks = outlinks
         self.interaction_names = interaction_names

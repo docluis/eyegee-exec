@@ -14,7 +14,7 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint import MemorySaver
 
-from src.discovery.utils import get_performance_logs, parse_page_requests
+from src.discovery.utils import filter_html, get_performance_logs, parse_page_requests
 from src.log import logger
 from src.discovery.templates import interactionagent_inital_prompt_template
 
@@ -26,6 +26,7 @@ class InteractionAgent:
         self.app = self.initialize_app()
         self.p_reqs = []
         self.last_page_soup = None
+        self.current_path = None
 
     def initialize_tools(self):
         # Define tools for interaction with the website using Selenium
@@ -152,52 +153,83 @@ class InteractionAgent:
             return [res]
 
         @tool("get_page_soup")
-        def get_page_soup_tool():
+        def get_page_soup_tool(filtered: bool = True):
             """
             Get the page source.
-            """
-            logger.info("Getting page source")
 
-            res = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
+            If filtered is True, the page source will be filtered to remove unnecessary tags and attributes.
+            Better for LLM, reduces the number of tokens, however, may remove some important information.
+
+            Use filtered=False to get the raw page source. Only use if necessary.
+
+            Returns the page source as a string.
+            """
+            logger.info(
+                f"Getting page source with filtered: {'True' if filtered else 'False'}"
+            )
+
+            res = BeautifulSoup(self.cf.driver.page_source, "html.parser")
             self.last_page_soup = res
 
-            logger.debug(res)
-            return [res]
+            if filtered:
+                res = filter_html(res)
+
+            logger.debug(res.prettify())
+            return [res.prettify()]
 
         @tool("get_page_soup_diff")
-        def get_page_soup_diff_tool():
+        def get_page_soup_diff_tool(filtered: bool = True):
             """
             Get the only the diff since last get_page_soup or get_page_soup_diff tool call.
 
             May improve efficiency, by providing fewer token.
-            """
-            logger.info("Getting page source diff")
 
-            if self.last_page_soup is None:
+            If filtered is True, the page source will be filtered to remove unnecessary tags and attributes.
+            Better for LLM, reduces the number of tokens, however, may remove some important information.
+
+            Use filtered=False to get the raw page source. Only use if necessary.
+
+            Returns the page source diff as a string.
+            """
+            logger.info(
+                f"Getting page source diff with filtered: {'True' if filtered else 'False'}"
+            )
+            before = self.last_page_soup
+            now = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+
+            if filtered:
+                before = filter_html(before)
+                now = filter_html(now)
+
+            if before is None:
                 return ["No previous page soup found. Use get_page_soup first."]
             else:
-                res = BeautifulSoup(
-                    self.cf.driver.page_source, "html.parser"
-                ).prettify()
                 diff = unified_diff(
-                    self.last_page_soup.splitlines(),
-                    res.splitlines(),
+                    before.prettify().splitlines(),
+                    now.prettify().splitlines(),
                     lineterm="",
                 )
-                self.last_page_soup = res
+                self.last_page_soup = now
                 diff_print = "\n".join(list(diff))
                 logger.debug(diff_print)
                 return [diff_print]
 
         @tool("get_outgoing_requests")
-        def get_outgoing_requests_tool():
+        def get_outgoing_requests_tool(filtered: bool = True):
             """
             Get the performance logs and parse the outgoing requests, to read the APIs called.
             Will only return requests since the last navigation.
+
+            Use filtered=False to get all outgoing requests. Only use if necessary.
             """
-            logger.info("Getting outgoing requests")
+            logger.info(f"Getting outgoing requests with filtered: {filtered}")
             p_logs = get_performance_logs(self.cf.driver)
-            p_reqs = parse_page_requests("", "", p_logs)
+            p_reqs = parse_page_requests(
+                target=self.cf.target,
+                path=self.current_path,
+                p_logs=p_logs,
+                filtered=filtered,
+            )
             self.p_reqs.extend(p_reqs)
 
             res = json.dumps(p_reqs, indent=4)
@@ -257,6 +289,7 @@ class InteractionAgent:
     def interact(self, path, interaction):
         self.p_reqs = []  # reset the page request list
         self.last_page_soup = None  # reset the last page soup
+        self.current_path = path
         prompt = interactionagent_inital_prompt_template.format(
             url=f"{self.cf.target}{path}", interaction=interaction
         )

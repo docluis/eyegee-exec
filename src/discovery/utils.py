@@ -7,8 +7,20 @@ from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
 from src.log import logger
 
+remove_file_extensions = [
+    ".js",  # TODO: could remove API requests in Edge Cases
+    ".css",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".svg",
+    ".gif",
+    ".ico",
+    ".woff",
+    ".woff2",
+]
 
-def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> List[dict]:
+def parse_page_requests(target: str, path: str, p_logs: List[dict], filtered: bool = True) -> List[dict]:
     """
     Parse the page requests from the given performance logs.
     """
@@ -16,12 +28,19 @@ def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> List[dict
     for log in p_logs:
         log = json.loads(log["message"])["message"]
         if log["method"] == "Network.requestWillBeSent":
-            # TODO: check if this is necessary, otherwise remove also params
-            # if (
-            #     log["params"]["request"]["url"] == target + path
-            #     and log["params"]["request"]["method"] == "GET"
-            # ):  # ignore requests to the same page
-            #     continue
+            if filtered: # Filter out unnecessary requests
+                if (
+                    log["params"]["request"]["url"] == target + path
+                    and log["params"]["request"]["method"] == "GET"
+                ):
+                    continue # ignore initial page request
+                if any(
+                    [
+                        log["params"]["request"]["url"].endswith(ext)
+                        for ext in remove_file_extensions
+                    ]
+                ):
+                    continue # ignore requests with file extensions
             page_request = {
                 "url": log["params"]["request"]["url"],
                 "method": log["params"]["request"]["method"],
@@ -51,6 +70,47 @@ def get_performance_logs(driver) -> List[dict]:
     logs = [log for log in logs if log["timestamp"] > ts]
     return logs
 
+def filter_html(soup: BeautifulSoup) -> BeautifulSoup:
+    """
+    Experimental: TODO: Make sure no important content is removed.
+
+    Filter the given soup. Remove unnecessary tags and attributes (for LLM).
+    
+    Returns the filtered soup.
+    """
+    soup_cpy = soup
+    remove_tags = ["script", "style", "meta", "link", "noscript"]
+    keep_attributes = [
+            "id",
+            "class",
+            "aria-",
+            "role",
+            "href",
+            "placeholder",
+            "name",
+            "type",
+            "src",
+            "alt",
+        ]
+    keep_classes = ["btn", "nav", "search", "form", "input"]
+    
+    for tag in soup_cpy(remove_tags):
+        tag.extract()
+
+    for tag in soup_cpy.find_all(True):
+        for attribute in list(tag.attrs):
+            if not any(attribute.startswith(prefix) for prefix in keep_attributes):
+                del tag.attrs[attribute]
+            # Remove unnecessary classes, TODO: this seems to be too aggressive
+            # elif attribute == "class":
+            #     important_classes = [
+            #         cls
+            #         for cls in tag.attrs["class"]
+            #         if any(cls.startswith(prefix) for prefix in keep_classes)
+            #     ]
+            #     tag.attrs["class"] = important_classes if important_classes else None
+
+    return soup_cpy
 
 # pages is list of Page objects
 def output_to_file(si: SiteInfo) -> None:
