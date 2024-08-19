@@ -20,7 +20,7 @@ remove_file_extensions = [
     ".woff2",
 ]
 
-def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> List[dict]:
+def parse_page_requests(target: str, path: str, p_logs: List[dict], filtered: bool = True) -> List[dict]:
     """
     Parse the page requests from the given performance logs.
     """
@@ -28,18 +28,19 @@ def parse_page_requests(target: str, path: str, p_logs: List[dict]) -> List[dict
     for log in p_logs:
         log = json.loads(log["message"])["message"]
         if log["method"] == "Network.requestWillBeSent":
-            if (
-                log["params"]["request"]["url"] == target + path
-                and log["params"]["request"]["method"] == "GET"
-            ):
-                continue # ignore initial page request
-            if any(
-                [
-                    log["params"]["request"]["url"].endswith(ext)
-                    for ext in remove_file_extensions
-                ]
-            ):
-                continue # ignore requests with file extensions
+            if filtered: # Filter out unnecessary requests
+                if (
+                    log["params"]["request"]["url"] == target + path
+                    and log["params"]["request"]["method"] == "GET"
+                ):
+                    continue # ignore initial page request
+                if any(
+                    [
+                        log["params"]["request"]["url"].endswith(ext)
+                        for ext in remove_file_extensions
+                    ]
+                ):
+                    continue # ignore requests with file extensions
             page_request = {
                 "url": log["params"]["request"]["url"],
                 "method": log["params"]["request"]["method"],

@@ -10,18 +10,24 @@ Only include the most important information in your summary.
 
 The summary does not need to include the function of the entire website, only of the the provided page's function specifically.
 
-Keep the summary to a maximum of 2-3 sentences. The summary has to be neutral and objective.
+Keep the summary to a maximum of 1-2 sentences. The summary has to be neutral and objective.
 """
 
 interaction_system_message = """
-Your task is to parse the interactions for each of the the provided pages individually. Interactions are any ways a user can submit information to the website, including but not limited to buttons, forms, and other JavaScript interactive elements. Do not include links or other static elements.
-Return the interactions in raw JSON format, where each interaction has the following attributes:
+In the following tasks, you will receive HTML content from web pages. Your job is to identify and extract all user interactions on each page individually. An interaction is defined as any element or group of elements that allows users to submit information or perform actions on the website. This includes, but is not limited to, forms, buttons, and other interactive JavaScript elements. Links and other non-interactive elements should be excluded.
 
-name: A descriptive name for the interaction.
-description: A brief description of the interaction's function.
-input_fields: A list of dictionaries, where each dictionary has the following attributes:
-    name: The name of the input field.
-    type: The type of the input field, such as "text", "password", or "button".
+For each interaction, you will return a JSON object with the following structure:
+- name: A descriptive name for the interaction.
+- description: A concise description of what the interaction does.
+- input_fields: A list of dictionaries representing the input elements within the interaction, where each dictionary contains:
+    - name: The name or identifier of the input field.
+    - type: The type of the input field (e.g., "text", "password", "button", "checkbox").
+
+If there are multiple buttons or inputs with the same functionality, group them under a single interaction.
+
+If the page contains an interaction that was already parsed on a previous page, include it with the same name, description, and input_fields as before.
+
+If no interactions are found on a page, return an empty JSON array [].
 
 Example Output:
 [
@@ -44,12 +50,10 @@ Example Output:
     }
 ]
 
-Return an empty list [] if no interactions are found. Do not include markdown backticks in your output.
-
-If an interaction has been parsed on a previous page, include it with the same name, description and input_fields as the previous page.
-For multiple buttons with the same functionality, include the group of buttons as a single interaction.
-
-IMPORTANT: Do not include links or other static elements in your output (only interactive elements that may submit data to the server).
+**Important Notes**:
+    - Only include elements that allow users to submit or interact with data.
+    - Exclude all static elements, such as links or text displays.
+    - Do not include any markdown formatting (e.g., backticks) in your output.
 """
 
 

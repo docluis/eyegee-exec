@@ -51,7 +51,9 @@ def discover(cf: Config) -> SiteInfo:
             continue
 
         p_logs = get_performance_logs(cf.driver)
-        p_reqs = parse_page_requests(cf.target, path, p_logs)
+        p_reqs = parse_page_requests(
+            target=cf.target, path=path, p_logs=p_logs, filtered=True
+        )
 
         if len(p_reqs) > 0:
             apis = llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4))
@@ -61,6 +63,9 @@ def discover(cf: Config) -> SiteInfo:
 
         interactions = llm_interactionparser.parse_interactions(soup)
         interaction_names = si.add_interactions(interactions)
+
+        for interaction_name in interaction_names:
+            logger.info(f"Found Interaction: {interaction_name}")
 
         # Create the page object
         page = Page(
@@ -72,9 +77,6 @@ def discover(cf: Config) -> SiteInfo:
             interaction_names=interaction_names,
             apis_called=apis_called_passive,
         )
-
-        for interaction_name in page.interaction_names:
-            logger.info(f"Found Interaction: {interaction_name}")
 
         si.add_paths_to_todo(page.outlinks)
         si.add_page(page)

@@ -23,13 +23,13 @@ class Config:
         self.selenium_rate = 0.5
 
         ####### Model #######
-        self.model = ChatOpenAI(model="gpt-4o")
+        self.model = ChatOpenAI(model="gpt-4o-mini")
         self.parser = StrOutputParser()
 
 
         ####### Target #######
-        # website = "http://127.0.0.1:3000"
-        website = "http://localhost:80/"
+        website = "http://127.0.0.1:3000"
+        # website = "http://localhost:80/"
 
         parsed_url = urlparse(website)
         self.target = f"{parsed_url.scheme}://{parsed_url.netloc}"

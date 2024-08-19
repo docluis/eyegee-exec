@@ -215,14 +215,21 @@ class InteractionAgent:
                 return [diff_print]
 
         @tool("get_outgoing_requests")
-        def get_outgoing_requests_tool():
+        def get_outgoing_requests_tool(filtered: bool = True):
             """
             Get the performance logs and parse the outgoing requests, to read the APIs called.
             Will only return requests since the last navigation.
+
+            Use filtered=False to get all outgoing requests. Only use if necessary.
             """
-            logger.info("Getting outgoing requests")
+            logger.info(f"Getting outgoing requests with filtered: {filtered}")
             p_logs = get_performance_logs(self.cf.driver)
-            p_reqs = parse_page_requests(self.cf.target, self.current_path, p_logs)
+            p_reqs = parse_page_requests(
+                target=self.cf.target,
+                path=self.current_path,
+                p_logs=p_logs,
+                filtered=filtered,
+            )
             self.p_reqs.extend(p_reqs)
 
             res = json.dumps(p_reqs, indent=4)
