@@ -28,8 +28,8 @@ class Config:
 
 
         ####### Target #######
-        website = "http://127.0.0.1:3000"
-        # website = "http://localhost:80/"
+        # website = "http://127.0.0.1:3000"
+        website = "http://localhost:80/"
 
         parsed_url = urlparse(website)
         self.target = f"{parsed_url.scheme}://{parsed_url.netloc}"

@@ -7,6 +7,7 @@ from difflib import unified_diff
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.keys import Keys
 
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph, MessagesState
@@ -55,7 +56,12 @@ class InteractionAgent:
             # TODO: keep in mind that this is a very simple implementation, XPath is not always the best way to identify,
             #  it may return muliple elements, or the element may not be found at all, so check edgecases, and improve this
             element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
-            element.clear()  # clear the field first
+            
+            # clear the field first
+            element.clear()
+            element.send_keys(Keys.CONTROL + "a")  # select all
+            element.send_keys(Keys.DELETE)  # delete
+
             element.send_keys(value)
 
             # now examine how the entered data looks like

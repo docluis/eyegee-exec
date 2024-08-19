@@ -15,7 +15,7 @@ Do not interact with any other elements on the page.
 Your workflow should look like this:
 1. Navigate to the page.
 2. Inspect page html.
-3. Interact with the elements individually with the tools (Fill out data, Select options, Click buttons, ...) and observe their output.
+3. Interact with the elements individually with the tools (Fill out data, Select options, Click buttons, ...) and observe their output. Use only one tool at a time.
 4. Submit if necessary. Check the output of the tools before submitting.
 5. Observe the page html and potential outgoing requests to the server/api.
 6. If unsuccessful, adjust your input and reattempt the interaction.
