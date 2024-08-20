@@ -45,7 +45,7 @@ def discover(cf: Config) -> SiteInfo:
 
         originial_soup = BeautifulSoup(cf.driver.page_source, "html.parser")
         soup = filter_html(originial_soup)
-
+        
         si.paths_visited.append(path)
         if si.check_if_visited(soup):
             continue
@@ -70,7 +70,7 @@ def discover(cf: Config) -> SiteInfo:
         # Create the page object
         page = Page(
             path=path,
-            title=soup.title.string,
+            title=soup.title.string if soup.title else None,
             original_soup=soup,
             summary=llm_summarizer.create_summary(soup),
             outlinks=parse_links(soup),

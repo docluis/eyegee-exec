@@ -52,7 +52,7 @@ Example Output:
 
 **Important Notes**:
     - Only include elements that allow users to submit or interact with data.
-    - Exclude all static elements, such as links or text displays.
+    - Do not include any Button or Links that just redirect to another page.
     - Do not include any markdown formatting (e.g., backticks) in your output.
 """
 

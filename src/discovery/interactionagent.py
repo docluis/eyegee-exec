@@ -56,7 +56,7 @@ class InteractionAgent:
             # TODO: keep in mind that this is a very simple implementation, XPath is not always the best way to identify,
             #  it may return muliple elements, or the element may not be found at all, so check edgecases, and improve this
             element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
-            
+
             # clear the field first
             element.clear()
             element.send_keys(Keys.CONTROL + "a")  # select all
@@ -139,8 +139,13 @@ class InteractionAgent:
 
             time.sleep(self.cf.selenium_rate)
             soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
-            element.click()
+            try:
+                element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+                element.click()
+            except Exception as e:
+                res = f"Error: Attempted to click button with name: {xpath_indenfifier}. Error: {e}\n Retry with a different identifier."
+                logger.debug(res)
+                return [res]
             time.sleep(self.cf.selenium_rate)
             soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
 

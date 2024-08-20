@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 class Page:
     def __init__(
         self,
-        path: str,
-        title: str,
+        path: str | None,
+        title: str | None,
         original_soup: BeautifulSoup,
         summary: str,
         outlinks: List[str],
