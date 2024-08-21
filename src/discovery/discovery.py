@@ -71,9 +71,9 @@ def discover(cf: Config) -> SiteInfo:
         page = Page(
             path=path,
             title=soup.title.string if soup.title else None,
-            original_soup=soup,
+            original_soup=originial_soup,
             summary=llm_summarizer.create_summary(soup),
-            outlinks=parse_links(soup),
+            outlinks=parse_links(originial_soup),
             interaction_names=interaction_names,
             apis_called=apis_called_passive,
         )

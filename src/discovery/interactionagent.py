@@ -61,6 +61,7 @@ class InteractionAgent:
             element.clear()
             element.send_keys(Keys.CONTROL + "a")  # select all
             element.send_keys(Keys.DELETE)  # delete
+            element.send_keys(50 * Keys.BACKSPACE)
 
             element.send_keys(value)
 
@@ -130,27 +131,45 @@ class InteractionAgent:
             logger.debug(res)
             return [res]
 
-        @tool("click_button")
-        def click_button_tool(xpath_indenfifier: str):
+        @tool("click")
+        def click_tool(xpath_indenfifier: str, using_javascript: bool = False):
             """
-            Click the button with the given name.
+            Click the element with the given identifier using selenium.
+
+            Set using_javascript to True to force the click using JavaScript.
+
+            If the element is not found, an error will be returned.
             """
-            logger.info(f"Clicking button with name: {xpath_indenfifier}")
+            logger.info(f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}")
 
             time.sleep(self.cf.selenium_rate)
             soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
             try:
                 element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
-                element.click()
+                if using_javascript:
+                    self.cf.driver.execute_script("arguments[0].click();", element)
+                else:
+                    element.click()
             except Exception as e:
-                res = f"Error: Attempted to click button with name: {xpath_indenfifier}. Error: {e}\n Retry with a different identifier."
+                res = f"""
+                Error: Attempted to click element with name: {xpath_indenfifier}.
+                Exception Message:
+                {e}
+
+                Retry with a different identifier or by clicking (outer) elements,
+                alternatively, use the JavaScript click option to force the click.
+                """
                 logger.debug(res)
+                logger.info(f"Pressing {xpath_indenfifier} failed...")
                 return [res]
             time.sleep(self.cf.selenium_rate)
             soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
 
             if soup_before == soup_after:
-                res = f"Clicked button with name: {xpath_indenfifier}, but soup before and after are the same. Check outgoing requests to see if something happened."
+                res = f"""
+                Clicked element with name: {xpath_indenfifier}, but soup before and after are the same.
+                Check outgoing requests to see if something happened.
+                """
             else:
                 diff = unified_diff(
                     soup_before.prettify().splitlines(),
@@ -158,7 +177,11 @@ class InteractionAgent:
                     lineterm="",
                 )
                 diff_print = "\n".join(list(diff))
-                res = f"Clicked button with name: {xpath_indenfifier}. Page changed. Diff: \n{diff_print}"
+                res = f"""
+                Clicked element with name: {xpath_indenfifier}.
+                Page changed. Diff:
+                {diff_print}
+                """
 
             logger.debug(res)
             return [res]
@@ -253,7 +276,7 @@ class InteractionAgent:
             fill_text_field_tool,
             fill_text_field_date_tool,
             select_option_tool,
-            click_button_tool,
+            click_tool,
             get_page_soup_tool,
             get_page_soup_diff_tool,
             get_outgoing_requests_tool,

@@ -12,5 +12,5 @@ class Interaction:
         return {
             "name": self.name,
             "description": self.description,
-            "input_fields": self.input_fields
+            # "input_fields": self.input_fields
         }

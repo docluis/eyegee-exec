@@ -1,4 +1,5 @@
 import json
+import copy
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -78,8 +79,9 @@ def filter_html(soup: BeautifulSoup) -> BeautifulSoup:
     
     Returns the filtered soup.
     """
-    soup_cpy = soup
-    remove_tags = ["script", "style", "meta", "link", "noscript"]
+    # Copy the soup to avoid modifying the original
+    soup_cpy = copy.deepcopy(soup)
+    remove_tags = ["script", "style", "meta", "link", "noscript", "a"]
     keep_attributes = [
             "id",
             "class",
@@ -97,18 +99,19 @@ def filter_html(soup: BeautifulSoup) -> BeautifulSoup:
     for tag in soup_cpy(remove_tags):
         tag.extract()
 
+    # TODO: this seems to be too aggressive, reduce tokens in different ways
     for tag in soup_cpy.find_all(True):
         for attribute in list(tag.attrs):
             if not any(attribute.startswith(prefix) for prefix in keep_attributes):
                 del tag.attrs[attribute]
-            # Remove unnecessary classes, TODO: this seems to be too aggressive
-            # elif attribute == "class":
-            #     important_classes = [
-            #         cls
-            #         for cls in tag.attrs["class"]
-            #         if any(cls.startswith(prefix) for prefix in keep_classes)
-            #     ]
-            #     tag.attrs["class"] = important_classes if important_classes else None
+    #         # Remove unnecessary classes, 
+    #         elif attribute == "class":
+    #             important_classes = [
+    #                 cls
+    #                 for cls in tag.attrs["class"]
+    #                 if any(cls.startswith(prefix) for prefix in keep_classes)
+    #             ]
+    #             tag.attrs["class"] = important_classes if important_classes else None
 
     return soup_cpy
 
