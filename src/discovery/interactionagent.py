@@ -15,7 +15,7 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint import MemorySaver
 
-from src.discovery.utils import filter_html, get_performance_logs, parse_page_requests
+from src.discovery.utils import filter_html, parse_page_requests
 from src.log import logger
 from src.discovery.templates import interactionagent_inital_prompt_template
 
@@ -257,11 +257,10 @@ class InteractionAgent:
             Use filtered=False to get all outgoing requests. Only use if necessary.
             """
             logger.info(f"Getting outgoing requests with filtered: {filtered}")
-            p_logs = get_performance_logs(self.cf.driver)
             p_reqs = parse_page_requests(
+                driver=self.cf.driver,
                 target=self.cf.target,
                 path=self.current_path,
-                p_logs=p_logs,
                 filtered=filtered,
             )
             self.p_reqs.extend(p_reqs)

@@ -1,5 +1,5 @@
 import json
-from urllib.parse import urlparse
+from src.discovery.schedule import Schedule
 from src.discovery.interaction import Interaction
 from src.discovery.page import Page
 from src.discovery.api import Api
@@ -11,10 +11,7 @@ from typing import List, Dict
 class SiteInfo:
     def __init__(self, target: str, initial_path: str) -> None:
         self.target = target
-        self.initial_path = initial_path
-
-        self.paths_todo = [initial_path]
-        self.paths_visited = []
+        self.schuedule = Schedule(target, initial_path)
 
         self.pages = []
         self.pages_hashes = []
@@ -30,17 +27,6 @@ class SiteInfo:
         else:
             self.pages_hashes.append(page_hash)
             return False
-
-    def add_paths_to_todo(self, paths: List[str]) -> None:
-        for path in paths:
-            # if path starts with http:// or https://, make sure its in scope (same domain)
-            if path.startswith("http://") or path.startswith("https://"):
-                if urlparse(path).netloc != self.target:
-                    logger.debug(f"Skipping outlink {path} as it is out of scope")
-                    continue
-
-            if path not in self.paths_todo and path not in self.paths_visited:
-                self.paths_todo.append(path)
 
     def add_page(self, page: Page) -> None:
         self.pages.append(page)
@@ -112,11 +98,17 @@ class SiteInfo:
                 interaction_obj = Interaction(
                     interaction["name"],
                     interaction["description"],
-                    interaction["input_fields"], # json.loads?
+                    interaction["input_fields"],  # json.loads?
                 )
                 self.interactions.append(interaction_obj)
         return interaction_names
     
+    def get_interaction(self, interaction_name: str) -> Interaction:
+        for interaction in self.interactions:
+            if interaction.name == interaction_name:
+                return interaction
+        return None
+
     def get_paths_with_interaction(self, interaction_name: str) -> List[str]:
         paths = []
         for page in self.pages:

@@ -21,10 +21,14 @@ remove_file_extensions = [
     ".woff2",
 ]
 
-def parse_page_requests(target: str, path: str, p_logs: List[dict], filtered: bool = True) -> List[dict]:
+def parse_page_requests(driver, target: str, path: str, filtered: bool = True) -> List[dict]:
     """
     Parse the page requests from the given performance logs.
     """
+    logs = driver.get_log("performance")
+    ts = driver.execute_script("return window.performance.timing.navigationStart")
+    p_logs = [log for log in logs if log["timestamp"] > ts]
+
     page_requests = []
     for log in p_logs:
         log = json.loads(log["message"])["message"]
@@ -60,16 +64,6 @@ def parse_links(soup: BeautifulSoup) -> List[str]:
     for link in soup.find_all("a"):
         links.append(link.get("href"))
     return links
-
-
-def get_performance_logs(driver) -> List[dict]:
-    """
-    Get the performance logs from the given driver since the last navigation.
-    """
-    logs = driver.get_log("performance")
-    ts = driver.execute_script("return window.performance.timing.navigationStart")
-    logs = [log for log in logs if log["timestamp"] > ts]
-    return logs
 
 def filter_html(soup: BeautifulSoup) -> BeautifulSoup:
     """
