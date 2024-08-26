@@ -1,5 +1,4 @@
 import json
-from src.discovery.schedule import Schedule
 from src.discovery.interaction import Interaction
 from src.discovery.page import Page
 from src.discovery.api import Api
@@ -9,9 +8,8 @@ from typing import List, Dict
 
 
 class SiteInfo:
-    def __init__(self, target: str, initial_path: str) -> None:
+    def __init__(self, target: str) -> None:
         self.target = target
-        self.schuedule = Schedule(target, initial_path)
 
         self.pages = []
         self.pages_hashes = []

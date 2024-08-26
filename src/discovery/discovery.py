@@ -3,6 +3,7 @@ import time
 from bs4 import BeautifulSoup
 
 from config import Config
+from src.discovery.schedule import Schedule
 from src.discovery.interactionagent import InteractionAgent
 from src.discovery.llm import (
     llm_parse_requests_for_apis,
@@ -25,7 +26,8 @@ def discover(cf: Config) -> SiteInfo:
     Discover the given URL.
     """
     logger.info("Starting discovery")
-    si = SiteInfo(cf.target, cf.initial_path)
+    si = SiteInfo(cf.target)
+    schuedule = Schedule(cf.target, cf.initial_path)
 
     interaction_agent = InteractionAgent(cf)
     llm_summarizer = LLM_Summarizer(cf)
@@ -33,10 +35,10 @@ def discover(cf: Config) -> SiteInfo:
 
     rerank_required = True
 
-    while si.schuedule.paths_todo or si.schuedule.interactions_todo:
-        si.schuedule.print_schedule()
-        if si.schuedule.paths_todo:
-            path = si.schuedule.next_path()
+    while schuedule.paths_todo or schuedule.interactions_todo:
+        schuedule.print_schedule()
+        if schuedule.paths_todo:
+            path = schuedule.next_path()
             logger.info(f"Discovering path: {path}")
 
             cf.driver.get(f"{cf.target}{path}")
@@ -77,29 +79,29 @@ def discover(cf: Config) -> SiteInfo:
                 apis_called=apis_called_passive,
             )
 
-            si.schuedule.add_paths_to_todo(page.outlinks)
-            si.schuedule.add_interactions_to_todo(page.interaction_names)
+            schuedule.add_paths_to_todo(page.outlinks)
+            schuedule.add_interactions_to_todo(page.interaction_names)
 
             si.add_page(page)
 
             time.sleep(cf.selenium_rate)
 
-        elif si.schuedule.interactions_todo:
+        elif schuedule.interactions_todo:
             if rerank_required:
                 ranked_interactions = llm_rank_interactions(
-                    cf, si.schuedule.interactions_todo
+                    cf, schuedule.interactions_todo
                 )
                 logger.info(f"Re-Ranked Interactions: {ranked_interactions}")
-                si.schuedule.interactions_todo = ranked_interactions
+                schuedule.interactions_todo = ranked_interactions
                 rerank_required = False
 
-            interaction_name = si.schuedule.next_interaction()
+            interaction_name = schuedule.next_interaction()
             interaction = si.get_interaction(interaction_name)
             logger.info(f"Discovering interaction: {interaction_name}")
 
-            path = si.get_paths_with_interaction(interaction_name)
-            behaviour, all_p_reqs = interaction_agent.interact(
-                path=path[0], interaction=json.dumps(interaction.to_dict())
+            path = si.get_paths_with_interaction(interaction_name)[0]
+            behaviour, all_p_reqs, all_paths = interaction_agent.interact(
+                path=path, interaction=json.dumps(interaction.to_dict())
             )
 
             apis_called_interaction = (
@@ -114,7 +116,9 @@ def discover(cf: Config) -> SiteInfo:
             interaction.apis_called = apis_called_interaction
             interaction.tested = True
 
-            # TODO: parse out new interactions/pages here, set rerank_required to True
+            logger.info(f"All paths: {all_paths}")
+            schuedule.add_paths_to_todo(all_paths) # Add the new paths to the schedule
+            # TODO: add new interactions to the schedule
 
             time.sleep(cf.selenium_rate)
 
