@@ -20,11 +20,11 @@ class Graph:
         for page in si.pages:
             # Construct a node from a page in JSON format
             # TODO: TEMPFIX, match same sites with different paths
-            if page.path == "":
-                page.path = "/"
+            if page.uri == "":
+                page.uri = "/"
             node = {
-                "id": page.path,
-                "label": page.path,
+                "id": page.uri,
+                "label": page.uri,
                 "type": "page",
                 "summary": page.summary,
                 "outlinks": page.outlinks,
@@ -78,8 +78,8 @@ class Graph:
                     # skip this
                     continue
                 edge = {
-                    "id": f"{page.path}->{outlink}",
-                    "source": page.path,
+                    "id": f"{page.uri}->{outlink}",
+                    "source": page.uri,
                     "target": outlink,
                 }
                 links.append(edge)
@@ -88,8 +88,8 @@ class Graph:
         for page in si.pages:
             for interaction_name in page.interaction_names:
                 edge = {
-                    "id": f"{page.path}->{interaction_name}",
-                    "source": page.path,
+                    "id": f"{page.uri}->{interaction_name}",
+                    "source": page.uri,
                     "target": interaction_name,
                 }
                 links.append(edge)
@@ -98,8 +98,8 @@ class Graph:
         for page in si.pages:
             for page_api_called in page.apis_called:  # passive api calls
                 edge = {
-                    "id": f"{page.path}->{page_api_called}",
-                    "source": page.path,
+                    "id": f"{page.uri}->{page_api_called}",
+                    "source": page.uri,
                     "target": page_api_called,
                 }
                 links.append(edge)

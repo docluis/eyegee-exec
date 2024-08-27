@@ -22,17 +22,14 @@ Refrain from engaging with any other elements on the page.
     - Perform actions individually, one at a time, to accurately observe their effects.
     - You should simulate a human user's behavior by following the expected flow of interactions.
     - After each interaction, assess the output on the page.
-    - Only move on to Submission once you have interacted with the necessary elements.
-4. Submission:
     - If your interaction involves submitting a form or triggering a process, review the output thoroughly before submission.
-    - Submit the form or trigger the necessary action, then observe the resulting behavior.
-5. Post-Interaction Analysis:
+4. Post-Interaction Analysis:
     - Inspect any changes in the page HTML and monitor outgoing server/API requests initiated by your actions.
-6. Result Documentation:
+5. Result Documentation:
     - Summarize the observed behavior, describing how the element functions and the server's response from the client side.
     - Pay particular attention to any outgoing requests and document their details.
     - Report any unusual behaviors or errors encountered during the testing.
-7. Troubleshooting:
+6. Troubleshooting:
     - If your initial interaction is unsuccessful, adjust your input and repeat the interaction to achieve the expected outcome.
 
 # Guidelines

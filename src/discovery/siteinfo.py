@@ -107,9 +107,9 @@ class SiteInfo:
                 return interaction
         return None
 
-    def get_paths_with_interaction(self, interaction_name: str) -> List[str]:
-        paths = []
+    def get_uris_with_interaction(self, interaction_name: str) -> List[str]:
+        uris = []
         for page in self.pages:
             if interaction_name in page.interaction_names:
-                paths.append(page.path)
-        return paths
+                uris.append(page.uri)
+        return uris

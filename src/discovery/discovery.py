@@ -1,5 +1,6 @@
 import json
 import time
+
 from bs4 import BeautifulSoup
 
 from config import Config
@@ -35,13 +36,13 @@ def discover(cf: Config) -> SiteInfo:
 
     rerank_required = True
 
-    while schuedule.paths_todo or schuedule.interactions_todo:
+    while schuedule.uris_todo or schuedule.interactions_todo:
         schuedule.print_schedule()
-        if schuedule.paths_todo:
-            path = schuedule.next_path()
-            logger.info(f"Discovering path: {path}")
+        if schuedule.uris_todo:
+            uri = schuedule.next_uri()
+            logger.info(f"Discovering URI: {uri}")
 
-            cf.driver.get(f"{cf.target}{path}")
+            cf.driver.get(f"{cf.target}{uri}")
             time.sleep(cf.selenium_rate)
 
             originial_soup = BeautifulSoup(cf.driver.page_source, "html.parser")
@@ -51,7 +52,7 @@ def discover(cf: Config) -> SiteInfo:
                 continue
 
             p_reqs = parse_page_requests(
-                driver=cf.driver, target=cf.target, path=path, filtered=True
+                driver=cf.driver, target=cf.target, uri=uri, filtered=True
             )
 
             apis_called_passive = (
@@ -69,8 +70,9 @@ def discover(cf: Config) -> SiteInfo:
                 logger.info(f"Found Interaction: {interaction_name}")
 
             # Create the page object
+            # path, query_string = uri.split("?") if "?" in uri else (uri, None)
             page = Page(
-                path=path,
+                uri=uri,
                 title=soup.title.string if soup.title else None,
                 original_soup=originial_soup,
                 summary=llm_summarizer.create_summary(soup),
@@ -79,7 +81,7 @@ def discover(cf: Config) -> SiteInfo:
                 apis_called=apis_called_passive,
             )
 
-            schuedule.add_paths_to_todo(page.outlinks)
+            schuedule.add_uris_to_todo(page.outlinks)
             schuedule.add_interactions_to_todo(page.interaction_names)
 
             si.add_page(page)
@@ -99,9 +101,9 @@ def discover(cf: Config) -> SiteInfo:
             interaction = si.get_interaction(interaction_name)
             logger.info(f"Discovering interaction: {interaction_name}")
 
-            path = si.get_paths_with_interaction(interaction_name)[0]
+            uri = si.get_uris_with_interaction(interaction_name)[0]
             behaviour, all_p_reqs, all_paths = interaction_agent.interact(
-                path=path, interaction=json.dumps(interaction.to_dict())
+                uri=uri, interaction=json.dumps(interaction.to_dict())
             )
 
             apis_called_interaction = (
@@ -117,7 +119,7 @@ def discover(cf: Config) -> SiteInfo:
             interaction.tested = True
 
             logger.info(f"All paths: {all_paths}")
-            schuedule.add_paths_to_todo(all_paths) # Add the new paths to the schedule
+            schuedule.add_uris_to_todo(all_paths)  # Add the new paths to the schedule
             # TODO: add new interactions to the schedule
 
             time.sleep(cf.selenium_rate)

@@ -27,17 +27,21 @@ class InteractionAgent:
         self.tools = self.initialize_tools()
         self.app = self.initialize_app()
         self.p_reqs = []
-        self.paths = []
+        self.uris = []
         self.last_page_soup = None
-        self.initial_path = None
+        self.initial_uri = None
 
-    def note_path(self) -> str:
+    def note_uri(self) -> str:
         """
-        Note the current path and return it.
+        Note the current URI and return it.
         """
-        path_now = urlparse(self.cf.driver.current_url).path
-        if path_now not in self.paths:
-            self.paths.append(path_now)
+        parsed = urlparse(self.cf.driver.current_url)
+        path_now = parsed.path
+        query_string = parsed.query
+        if query_string:
+            path_now = f"{path_now}?{query_string}"
+        if path_now not in self.uris:
+            self.uris.append(path_now)
         return path_now
 
     def initialize_tools(self):
@@ -51,8 +55,8 @@ class InteractionAgent:
             self.cf.driver.get(url)
             time.sleep(self.cf.selenium_rate)
 
-            path_now = self.note_path()
-            res = f"Attempted to navigate to: {url}. Actual URL now: {path_now}"
+            uri_now = self.note_uri()
+            res = f"Attempted to navigate to: {url}. Actual URI now: {uri_now}"
             logger.debug(res)
             return [res]
 
@@ -85,7 +89,7 @@ class InteractionAgent:
                 ).prettify()
                 res = f"Error: Attempted to fill text field: {xpath_indenfifier} with value: {value}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
-            self.note_path()
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -122,7 +126,7 @@ class InteractionAgent:
                 ).prettify()
                 res = f"Error: Attempted to fill date field: {xpath_indenfifier} with value: {entry}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
-            self.note_path()
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -138,7 +142,7 @@ class InteractionAgent:
 
             actual_value = select.first_selected_option.text
 
-            self.note_path()
+            self.note_uri()
             res = f"Attempted to select option: {xpath_indenfifier} with value: {visible_value}. Actual value now: {actual_value}"
             logger.debug(res)
             return [res]
@@ -152,7 +156,9 @@ class InteractionAgent:
 
             If the element is not found, an error will be returned.
             """
-            logger.info(f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}")
+            logger.info(
+                f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}"
+            )
 
             time.sleep(self.cf.selenium_rate)
             soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
@@ -195,7 +201,7 @@ class InteractionAgent:
                 {diff_print}
                 """
 
-            self.note_path()
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -221,7 +227,7 @@ class InteractionAgent:
             if filtered:
                 res = filter_html(res)
 
-            self.note_path()
+            self.note_uri()
             logger.debug(res.prettify())
             return [res.prettify()]
 
@@ -248,8 +254,8 @@ class InteractionAgent:
             if filtered:
                 before = filter_html(before)
                 now = filter_html(now)
-            
-            self.note_path()
+
+            self.note_uri()
             if before is None:
                 return ["No previous page soup found. Use get_page_soup first."]
             else:
@@ -275,14 +281,14 @@ class InteractionAgent:
             p_reqs = parse_page_requests(
                 driver=self.cf.driver,
                 target=self.cf.target,
-                path=self.initial_path,
+                uri=self.initial_uri,
                 filtered=filtered,
             )
             self.p_reqs.extend(p_reqs)
 
             res = json.dumps(p_reqs, indent=4)
 
-            self.note_path()
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -335,13 +341,13 @@ class InteractionAgent:
         app = workflow.compile(checkpointer=checkpointer)
         return app
 
-    def interact(self, path, interaction):
+    def interact(self, uri, interaction):
         self.p_reqs = []  # reset the page request list
-        self.paths = []
+        self.uris = []
         self.last_page_soup = None  # reset the last page soup
-        self.initial_path = path
+        self.initial_uri = uri
         prompt = interactionagent_inital_prompt_template.format(
-            url=f"{self.cf.target}{path}", interaction=interaction
+            url=f"{self.cf.target}{uri}", interaction=interaction
         )
         final_state = self.app.invoke(
             {"messages": [HumanMessage(prompt)]},
@@ -349,4 +355,4 @@ class InteractionAgent:
         )
         last_message = final_state["messages"][-1].content
 
-        return last_message, self.p_reqs, self.paths
+        return last_message, self.p_reqs, self.uris

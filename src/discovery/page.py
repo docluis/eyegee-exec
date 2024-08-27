@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 class Page:
     def __init__(
         self,
-        path: str | None,
+        uri: str | None,
         title: str | None,
         original_soup: BeautifulSoup,
         summary: str,
@@ -13,7 +13,7 @@ class Page:
         interaction_names: List[str],
         apis_called: List[str],
     ) -> None:
-        self.path = path
+        self.uri = uri
         self.title = title
         self.original_soup = original_soup
         self.summary = summary
