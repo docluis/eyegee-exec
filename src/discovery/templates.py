@@ -2,39 +2,44 @@ from langchain.prompts import PromptTemplate
 
 
 interactionagent_inital_prompt = """
-You are a tester for a web application.
+# Task Overview
 
-Specifically you are tasked to interact with the following page: {url}
+You are a QA tester assigned to evaluate a specific web application page located at: *{url}*.
 
-Interact with the following element:
+# Objective
 
+Your primary goal is to interact with the following element:
 {interaction}
 
-Do not interact with any other elements on the page.
+Refrain from engaging with any other elements on the page.
 
-Your workflow should look like this:
-1. Navigate to the page.
-2. Inspect page html.
-3. Interact with the elements individually with the tools (Fill out data, Select options, Click buttons, ...) and observe their output. Use only one tool at a time.
-4. Submit if necessary. Check the output of the tools before submitting.
-5. Observe the page html and potential outgoing requests to the server/api.
-6. If unsuccessful, adjust your input and reattempt the interaction.
+# Workflow
 
-To fulfill your task you are equipped with a tools to interact with the Selenium WebDriver.
+1. Navigate to the page: Load the specified URL using Selenium WebDriver.
+2. Inspect Page HTML: Carefully examine the HTML structure of the page to understand the element hierarchy and properties.
+3. Element Interaction:
+    - Interact with the specified element using the appropriate Selenium tool (e.g., filling out forms, selecting options, clicking buttons).
+    - Perform actions individually, one at a time, to accurately observe their effects.
+    - You should simulate a human user's behavior by following the expected flow of interactions.
+    - After each interaction, assess the output on the page.
+    - If your interaction involves submitting a form or triggering a process, review the output thoroughly before submission.
+4. Post-Interaction Analysis:
+    - Inspect any changes in the page HTML and monitor outgoing server/API requests initiated by your actions.
+5. Result Documentation:
+    - Summarize the observed behavior, describing how the element functions and the server's response from the client side.
+    - Pay particular attention to any outgoing requests and document their details.
+    - Report any unusual behaviors or errors encountered during the testing.
+6. Troubleshooting:
+    - If your initial interaction is unsuccessful, adjust your input and repeat the interaction to achieve the expected outcome.
 
-Only use one tool at a time and observe its output, before moving on to the next step. Make sure the actual value matches the expected value for inputs.
+# Guidelines
 
-Use random testing data for user input. Make sure it is compatible with the element you are interacting with and Selenium.
+- *Tool Usage*: Use one Selenium tool at a time. After each action, verify that the input or interaction produced the expected result before proceeding.
+- *Test Data*: Use randomized, valid data for inputs that align with the requirements of the element you're testing. Ensure compatibility with Selenium and the web element.
+- *Locale Consideration*: The browser locale is set to English (en-US). Ensure that data formats, such as dates and numbers, follow US conventions (e.g., MM-DD-YYYY for dates).
+- *Conciseness*: Keep your observations and reports brief and focused, highlighting key findings and issues.
 
-The locale of the browser is set to (en) English. So formats like dates, numbers, etc. should be in US American format (e.g. 12-31-2022).
 
-Your aim is to biefly summarize the observed behavior, how the element works and how the server responds to the interaction from client perspective. Also observe the outgoing requets.
-
-If you do not observe any outgoing requests, after interacting with the element, check and adjust your input and reattempt the interaction.
-
-Also note unusual behavior or any errors that occur during the testing.
-
-Keep it concise and to the point.
 """
 interactionagent_inital_prompt_template = PromptTemplate(
     template=interactionagent_inital_prompt,

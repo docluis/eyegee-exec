@@ -52,7 +52,7 @@ Example Output:
 
 **Important Notes**:
     - Only include elements that allow users to submit or interact with data.
-    - Exclude all static elements, such as links or text displays.
+    - Do not include any Button or Links that just redirect to another page.
     - Do not include any markdown formatting (e.g., backticks) in your output.
 """
 
@@ -91,7 +91,7 @@ Return an empty list [] if no APIs calls are found. Do not include markdown back
 interaction_ranking_system_message = """
 Your are an AI model that has been tasked with ranking interactions based on their importance to the website's functionality.
 
-Interactions with a bigger impact on the website's functionality and security should be ranked higher. For example, a "Login" interaction is more important than a "Contact Us" interaction.
+Interactions with a bigger impact on the website's functionality and security should be ranked higher. For example, a "Register" interaction is more important than a "Contact Us" interaction.
 
 If there are multiple interactions with the same functionality, include one of them with higher importance than the others.
 

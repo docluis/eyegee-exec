@@ -1,7 +1,8 @@
 import time
 import json
-from typing import Literal
 
+from urllib.parse import urlparse
+from typing import Literal
 from bs4 import BeautifulSoup
 from difflib import unified_diff
 
@@ -15,7 +16,7 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint import MemorySaver
 
-from src.discovery.utils import filter_html, get_performance_logs, parse_page_requests
+from src.discovery.utils import filter_html, parse_page_requests
 from src.log import logger
 from src.discovery.templates import interactionagent_inital_prompt_template
 
@@ -26,8 +27,22 @@ class InteractionAgent:
         self.tools = self.initialize_tools()
         self.app = self.initialize_app()
         self.p_reqs = []
+        self.uris = []
         self.last_page_soup = None
-        self.current_path = None
+        self.initial_uri = None
+
+    def note_uri(self) -> str:
+        """
+        Note the current URI and return it.
+        """
+        parsed = urlparse(self.cf.driver.current_url)
+        path_now = parsed.path
+        query_string = parsed.query
+        if query_string:
+            path_now = f"{path_now}?{query_string}"
+        if path_now not in self.uris:
+            self.uris.append(path_now)
+        return path_now
 
     def initialize_tools(self):
         # Define tools for interaction with the website using Selenium
@@ -40,10 +55,8 @@ class InteractionAgent:
             self.cf.driver.get(url)
             time.sleep(self.cf.selenium_rate)
 
-            actual_url = self.cf.driver.current_url
-
-            res = f"Attempted to navigate to: {url}. Actual URL now: {actual_url}"
-
+            uri_now = self.note_uri()
+            res = f"Attempted to navigate to: {url}. Actual URI now: {uri_now}"
             logger.debug(res)
             return [res]
 
@@ -56,11 +69,12 @@ class InteractionAgent:
             # TODO: keep in mind that this is a very simple implementation, XPath is not always the best way to identify,
             #  it may return muliple elements, or the element may not be found at all, so check edgecases, and improve this
             element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
-            
+
             # clear the field first
             element.clear()
             element.send_keys(Keys.CONTROL + "a")  # select all
             element.send_keys(Keys.DELETE)  # delete
+            element.send_keys(50 * Keys.BACKSPACE)
 
             element.send_keys(value)
 
@@ -75,6 +89,7 @@ class InteractionAgent:
                 ).prettify()
                 res = f"Error: Attempted to fill text field: {xpath_indenfifier} with value: {value}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -111,6 +126,7 @@ class InteractionAgent:
                 ).prettify()
                 res = f"Error: Attempted to fill date field: {xpath_indenfifier} with value: {entry}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -126,26 +142,52 @@ class InteractionAgent:
 
             actual_value = select.first_selected_option.text
 
+            self.note_uri()
             res = f"Attempted to select option: {xpath_indenfifier} with value: {visible_value}. Actual value now: {actual_value}"
             logger.debug(res)
             return [res]
 
-        @tool("click_button")
-        def click_button_tool(xpath_indenfifier: str):
+        @tool("click")
+        def click_tool(xpath_indenfifier: str, using_javascript: bool = False):
             """
-            Click the button with the given name.
+            Click the element with the given identifier using selenium.
+
+            Set using_javascript to True to force the click using JavaScript.
+
+            If the element is not found, an error will be returned.
             """
-            logger.info(f"Clicking button with name: {xpath_indenfifier}")
+            logger.info(
+                f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}"
+            )
 
             time.sleep(self.cf.selenium_rate)
             soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
-            element.click()
+            try:
+                element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+                if using_javascript:
+                    self.cf.driver.execute_script("arguments[0].click();", element)
+                else:
+                    element.click()
+            except Exception as e:
+                res = f"""
+                Error: Attempted to click element with name: {xpath_indenfifier}.
+                Exception Message:
+                {e}
+
+                Retry with a different identifier or by clicking (outer) elements,
+                alternatively, use the JavaScript click option to force the click.
+                """
+                logger.debug(res)
+                logger.info(f"Pressing {xpath_indenfifier} failed...")
+                return [res]
             time.sleep(self.cf.selenium_rate)
             soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
 
             if soup_before == soup_after:
-                res = f"Clicked button with name: {xpath_indenfifier}, but soup before and after are the same. Check outgoing requests to see if something happened."
+                res = f"""
+                Clicked element with name: {xpath_indenfifier}, but soup before and after are the same.
+                Check outgoing requests to see if something happened.
+                """
             else:
                 diff = unified_diff(
                     soup_before.prettify().splitlines(),
@@ -153,8 +195,13 @@ class InteractionAgent:
                     lineterm="",
                 )
                 diff_print = "\n".join(list(diff))
-                res = f"Clicked button with name: {xpath_indenfifier}. Page changed. Diff: \n{diff_print}"
+                res = f"""
+                Clicked element with name: {xpath_indenfifier}.
+                Page changed. Diff:
+                {diff_print}
+                """
 
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -180,6 +227,7 @@ class InteractionAgent:
             if filtered:
                 res = filter_html(res)
 
+            self.note_uri()
             logger.debug(res.prettify())
             return [res.prettify()]
 
@@ -207,6 +255,7 @@ class InteractionAgent:
                 before = filter_html(before)
                 now = filter_html(now)
 
+            self.note_uri()
             if before is None:
                 return ["No previous page soup found. Use get_page_soup first."]
             else:
@@ -229,17 +278,17 @@ class InteractionAgent:
             Use filtered=False to get all outgoing requests. Only use if necessary.
             """
             logger.info(f"Getting outgoing requests with filtered: {filtered}")
-            p_logs = get_performance_logs(self.cf.driver)
             p_reqs = parse_page_requests(
+                driver=self.cf.driver,
                 target=self.cf.target,
-                path=self.current_path,
-                p_logs=p_logs,
+                uri=self.initial_uri,
                 filtered=filtered,
             )
             self.p_reqs.extend(p_reqs)
 
             res = json.dumps(p_reqs, indent=4)
 
+            self.note_uri()
             logger.debug(res)
             return [res]
 
@@ -248,7 +297,7 @@ class InteractionAgent:
             fill_text_field_tool,
             fill_text_field_date_tool,
             select_option_tool,
-            click_button_tool,
+            click_tool,
             get_page_soup_tool,
             get_page_soup_diff_tool,
             get_outgoing_requests_tool,
@@ -292,12 +341,13 @@ class InteractionAgent:
         app = workflow.compile(checkpointer=checkpointer)
         return app
 
-    def interact(self, path, interaction):
+    def interact(self, uri, interaction):
         self.p_reqs = []  # reset the page request list
+        self.uris = []
         self.last_page_soup = None  # reset the last page soup
-        self.current_path = path
+        self.initial_uri = uri
         prompt = interactionagent_inital_prompt_template.format(
-            url=f"{self.cf.target}{path}", interaction=interaction
+            url=f"{self.cf.target}{uri}", interaction=interaction
         )
         final_state = self.app.invoke(
             {"messages": [HumanMessage(prompt)]},
@@ -305,4 +355,4 @@ class InteractionAgent:
         )
         last_message = final_state["messages"][-1].content
 
-        return last_message, self.p_reqs
+        return last_message, self.p_reqs, self.uris

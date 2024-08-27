@@ -30,7 +30,7 @@ def llm_parse_requests_for_apis(cf, page_requests) -> List[Dict]:
 
 
 
-def llm_rank_interactions(cf, interactions: List[Interaction]) -> List[Dict[str, Any]]:
+def llm_rank_interactions(cf, interactions_names: List[str]) -> List[Dict[str, Any]]:
     """
     Rank the given interactions using the LLM model to determine the most important interactions.
     """
@@ -38,7 +38,7 @@ def llm_rank_interactions(cf, interactions: List[Interaction]) -> List[Dict[str,
     logger.info("Ranking interactions")
     messages = [
         SystemMessage(interaction_ranking_system_message),
-        HumanMessage(json.dumps([interaction.to_dict() for interaction in interactions])),
+        HumanMessage(json.dumps(interactions_names)),
     ]
     ranked_interactions = chain.invoke(messages)
 
