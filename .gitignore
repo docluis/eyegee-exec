@@ -1,5 +1,6 @@
 .env
 venv/
+venv_custom_prompt_test/
 src/__pycache__/
 __pycache__/
 output.txt
