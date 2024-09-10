@@ -14,7 +14,7 @@ from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph, MessagesState
 from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
-from langgraph.checkpoint import MemorySaver
+from langgraph.checkpoint.memory import MemorySaver
 
 from src.discovery.utils import filter_html, parse_page_requests
 from src.log import logger
@@ -84,9 +84,7 @@ class InteractionAgent:
             if actual_value == value:
                 res = f"Attempted to fill text field: {xpath_indenfifier} with value: {value}."
             else:
-                soup = BeautifulSoup(
-                    self.cf.driver.page_source, "html.parser"
-                ).prettify()
+                soup = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
                 res = f"Error: Attempted to fill text field: {xpath_indenfifier} with value: {value}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
             self.note_uri()
@@ -94,15 +92,11 @@ class InteractionAgent:
             return [res]
 
         @tool("fill_text_field_date")
-        def fill_text_field_date_tool(
-            xpath_indenfifier: str, year_value: str, month_value: str, day_value: str
-        ):
+        def fill_text_field_date_tool(xpath_indenfifier: str, year_value: str, month_value: str, day_value: str):
             """
             Fill the date field with the given name with the given value.
             """
-            logger.info(
-                f"Filling date field with value: {year_value}-{month_value}-{day_value}"
-            )
+            logger.info(f"Filling date field with value: {year_value}-{month_value}-{day_value}")
 
             entry = f"{month_value}-{day_value}-{year_value}"
             element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
@@ -115,15 +109,11 @@ class InteractionAgent:
             actual_year, actual_month, actual_day = actual_value.split("-")
 
             if actual_value == entry or (
-                actual_year == year_value
-                and actual_month == month_value
-                and actual_day == day_value
+                actual_year == year_value and actual_month == month_value and actual_day == day_value
             ):
                 res = f"Filled date field: {xpath_indenfifier} with value: {entry}."
             else:
-                soup = BeautifulSoup(
-                    self.cf.driver.page_source, "html.parser"
-                ).prettify()
+                soup = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
                 res = f"Error: Attempted to fill date field: {xpath_indenfifier} with value: {entry}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
             self.note_uri()
@@ -156,9 +146,7 @@ class InteractionAgent:
 
             If the element is not found, an error will be returned.
             """
-            logger.info(
-                f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}"
-            )
+            logger.info(f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}")
 
             time.sleep(self.cf.selenium_rate)
             soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
@@ -217,9 +205,7 @@ class InteractionAgent:
 
             Returns the page source as a string.
             """
-            logger.info(
-                f"Getting page source with filtered: {'True' if filtered else 'False'}"
-            )
+            logger.info(f"Getting page source with filtered: {'True' if filtered else 'False'}")
 
             res = BeautifulSoup(self.cf.driver.page_source, "html.parser")
             self.last_page_soup = res
@@ -245,9 +231,7 @@ class InteractionAgent:
 
             Returns the page source diff as a string.
             """
-            logger.info(
-                f"Getting page source diff with filtered: {'True' if filtered else 'False'}"
-            )
+            logger.info(f"Getting page source diff with filtered: {'True' if filtered else 'False'}")
             before = self.last_page_soup
             now = BeautifulSoup(self.cf.driver.page_source, "html.parser")
 
@@ -346,12 +330,10 @@ class InteractionAgent:
         self.uris = []
         self.last_page_soup = None  # reset the last page soup
         self.initial_uri = uri
-        prompt = interactionagent_inital_prompt_template.format(
-            url=f"{self.cf.target}{uri}", interaction=interaction
-        )
+        prompt = interactionagent_inital_prompt_template.format(url=f"{self.cf.target}{uri}", interaction=interaction)
         final_state = self.app.invoke(
             {"messages": [HumanMessage(prompt)]},
-            config={"configurable": {"thread_id": 42}},
+            config={"configurable": {"thread_id": 42}, "recursion_limit": 50},
         )
         last_message = final_state["messages"][-1].content
 
