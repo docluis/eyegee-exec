@@ -142,10 +142,10 @@ class InteractionAgent:
         def click_tool(xpath_indenfifier: str, using_javascript: bool = False):
             """
             Click the element with the given identifier using selenium.
-
+            
             Set using_javascript to True to force the click using JavaScript.
-
             If the element is not found, an error will be returned.
+            Click only one element at a time, to avoid issues with multiple elements being clicked at the same time.
             """
             if self.click_in_progress:
                 logger.info(f"Clicking element with name: {xpath_indenfifier} blocked")
@@ -211,9 +211,7 @@ class InteractionAgent:
 
             If filtered is True, the page source will be filtered to remove unnecessary tags and attributes.
             Better for LLM, reduces the number of tokens, however, may remove some important information.
-
             Use filtered=False to get the raw page source. Only use if necessary.
-
             Returns the page source as a string.
             """
             logger.info(f"Getting page source with filtered: {'True' if filtered else 'False'}")
@@ -237,9 +235,7 @@ class InteractionAgent:
 
             If filtered is True, the page source will be filtered to remove unnecessary tags and attributes.
             Better for LLM, reduces the number of tokens, however, may remove some important information.
-
             Use filtered=False to get the raw page source. Only use if necessary.
-
             Returns the page source diff as a string.
             """
             logger.info(f"Getting page source diff with filtered: {'True' if filtered else 'False'}")

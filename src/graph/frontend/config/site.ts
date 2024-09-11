@@ -4,10 +4,10 @@ export const siteConfig = {
   name: "eyegee-exec",
   description: "",
   navItems: [
-    {
-      label: "home",
-      href: "/",
-    },
+    // {
+    //   label: "home",
+    //   href: "/",
+    // },
     {
       label: "docs",
       href: "/docs",
