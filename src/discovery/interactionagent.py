@@ -30,6 +30,7 @@ class InteractionAgent:
         self.uris = []
         self.last_page_soup = None
         self.initial_uri = None
+        self.click_in_progress = False
 
     def note_uri(self) -> str:
         """
@@ -146,48 +147,58 @@ class InteractionAgent:
 
             If the element is not found, an error will be returned.
             """
-            logger.info(f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}")
-
-            time.sleep(self.cf.selenium_rate)
-            soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-            try:
-                element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
-                if using_javascript:
-                    self.cf.driver.execute_script("arguments[0].click();", element)
-                else:
-                    element.click()
-            except Exception as e:
-                res = f"""
-                Error: Attempted to click element with name: {xpath_indenfifier}.
-                Exception Message:
-                {e}
-
-                Retry with a different identifier or by clicking (outer) elements,
-                alternatively, use the JavaScript click option to force the click.
-                """
+            if self.click_in_progress:
+                logger.info(f"Clicking element with name: {xpath_indenfifier} blocked")
+                res = "Error: Click in progress, please wait for the previous click to finish."
                 logger.debug(res)
-                logger.info(f"Pressing {xpath_indenfifier} failed...")
                 return [res]
-            time.sleep(self.cf.selenium_rate)
-            soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
 
-            if soup_before == soup_after:
-                res = f"""
-                Clicked element with name: {xpath_indenfifier}, but soup before and after are the same.
-                Check outgoing requests to see if something happened.
-                """
-            else:
-                diff = unified_diff(
-                    soup_before.prettify().splitlines(),
-                    soup_after.prettify().splitlines(),
-                    lineterm="",
-                )
-                diff_print = "\n".join(list(diff))
-                res = f"""
-                Clicked element with name: {xpath_indenfifier}.
-                Page changed. Diff:
-                {diff_print}
-                """
+            self.click_in_progress = True
+            try:
+                logger.info(f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}")
+
+                time.sleep(self.cf.selenium_rate)
+                soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+                try:
+                    element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+                    if using_javascript:
+                        self.cf.driver.execute_script("arguments[0].click();", element)
+                    else:
+                        element.click()
+                except Exception as e:
+                    res = f"""
+                    Error: Attempted to click element with name: {xpath_indenfifier}.
+                    Exception Message:
+                    {e}
+
+                    Retry with a different identifier or by clicking (outer) elements,
+                    alternatively, use the JavaScript click option to force the click.
+                    """
+                    logger.debug(res)
+                    logger.info(f"Pressing {xpath_indenfifier} failed...")
+                    return [res]
+                time.sleep(self.cf.selenium_rate)
+                soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+
+                if soup_before == soup_after:
+                    res = f"""
+                    Clicked element with name: {xpath_indenfifier}, but soup before and after are the same.
+                    Check outgoing requests to see if something happened.
+                    """
+                else:
+                    diff = unified_diff(
+                        soup_before.prettify().splitlines(),
+                        soup_after.prettify().splitlines(),
+                        lineterm="",
+                    )
+                    diff_print = "\n".join(list(diff))
+                    res = f"""
+                    Clicked element with name: {xpath_indenfifier}.
+                    Page changed. Diff:
+                    {diff_print}
+                    """
+            finally:
+                self.click_in_progress = False
 
             self.note_uri()
             logger.debug(res)
