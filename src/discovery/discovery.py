@@ -51,16 +51,10 @@ def discover(cf: Config) -> SiteInfo:
             if si.check_if_visited(soup):
                 continue
 
-            p_reqs = parse_page_requests(
-                driver=cf.driver, target=cf.target, uri=uri, filtered=True
-            )
+            p_reqs = parse_page_requests(driver=cf.driver, target=cf.target, uri=uri, filtered=True)
 
             apis_called_passive = (
-                si.add_apis(
-                    llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4))
-                )
-                if len(p_reqs) > 0
-                else []
+                si.add_apis(llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4))) if len(p_reqs) > 0 else []
             )
 
             interactions = llm_interactionparser.parse_interactions(soup)
@@ -90,9 +84,7 @@ def discover(cf: Config) -> SiteInfo:
 
         elif schuedule.interactions_todo:
             if rerank_required:
-                ranked_interactions = llm_rank_interactions(
-                    cf, schuedule.interactions_todo
-                )
+                ranked_interactions = llm_rank_interactions(cf, schuedule.interactions_todo)
                 logger.info(f"Re-Ranked Interactions: {ranked_interactions}")
                 schuedule.interactions_todo = ranked_interactions
                 rerank_required = False
@@ -102,14 +94,12 @@ def discover(cf: Config) -> SiteInfo:
             logger.info(f"Discovering interaction: {interaction_name}")
 
             uri = si.get_uris_with_interaction(interaction_name)[0]
-            behaviour, all_p_reqs, all_paths = interaction_agent.interact(
+            behaviour, all_p_reqs, all_paths, new_soup = interaction_agent.interact(
                 uri=uri, interaction=json.dumps(interaction.to_dict())
             )
 
             apis_called_interaction = (
-                si.add_apis(
-                    llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4))
-                )
+                si.add_apis(llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4)))
                 if len(all_p_reqs) > 0
                 else []
             )
@@ -120,7 +110,13 @@ def discover(cf: Config) -> SiteInfo:
 
             logger.info(f"All paths: {all_paths}")
             schuedule.add_uris_to_todo(all_paths)  # Add the new paths to the schedule
-            # TODO: add new interactions to the schedule
+
+            if new_soup:  # Parse interactions if the page has changed
+                interactions = llm_interactionparser.parse_interactions(soup)
+                interaction_names = si.add_interactions(interactions)
+
+                for interaction_name in interaction_names:
+                    logger.info(f"Found Interaction: {interaction_name}")
 
             time.sleep(cf.selenium_rate)
 

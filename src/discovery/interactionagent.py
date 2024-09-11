@@ -2,7 +2,7 @@ import time
 import json
 
 from urllib.parse import urlparse
-from typing import Literal
+from typing import List, Literal, Optional, Tuple
 from bs4 import BeautifulSoup
 from difflib import unified_diff
 
@@ -26,11 +26,11 @@ class InteractionAgent:
         self.cf = cf
         self.tools = self.initialize_tools()
         self.app = self.initialize_app()
-        self.p_reqs = []
-        self.uris = []
-        self.last_page_soup = None
-        self.initial_uri = None
-        self.click_in_progress = False
+        self.p_reqs: List[dict] = []
+        self.uris: List[str] = []
+        self.last_page_soup: Optional[BeautifulSoup] = None
+        self.initial_uri: Optional[str] = None
+        self.click_in_progress: bool = False
 
     def note_uri(self) -> str:
         """
@@ -142,7 +142,7 @@ class InteractionAgent:
         def click_tool(xpath_indenfifier: str, using_javascript: bool = False):
             """
             Click the element with the given identifier using selenium.
-            
+
             Set using_javascript to True to force the click using JavaScript.
             If the element is not found, an error will be returned.
             Click only one element at a time, to avoid issues with multiple elements being clicked at the same time.
@@ -332,11 +332,28 @@ class InteractionAgent:
         app = workflow.compile(checkpointer=checkpointer)
         return app
 
-    def interact(self, uri, interaction):
+    def interact(self, uri: str, interaction: str) -> Tuple[str, List[dict], List[str], Optional[str]]:
+        """
+        Interact with the website using the given interaction.
+
+        Args:
+            uri (str): The URI to interact with.
+            interaction (str): The interaction to perform with the website.
+
+        Returns:
+            Tuple:
+                A tuple containing the following elements:
+                - str: The last message from the interaction (usually a summary or output).
+                - List[dict]: The list of page requests made during the interaction.
+                - List[str]: A list of URIs observed during the interaction.
+                - Optional[str]: The new page soup after the interaction, if the page changed (None if unchanged).
+        """
+
         self.p_reqs = []  # reset the page request list
         self.uris = []
         self.last_page_soup = None  # reset the last page soup
         self.initial_uri = uri
+        initial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
         prompt = interactionagent_inital_prompt_template.format(url=f"{self.cf.target}{uri}", interaction=interaction)
         final_state = self.app.invoke(
             {"messages": [HumanMessage(prompt)]},
@@ -344,4 +361,10 @@ class InteractionAgent:
         )
         last_message = final_state["messages"][-1].content
 
-        return last_message, self.p_reqs, self.uris
+        new_soup = None
+        soup_now = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+        if soup_now.prettify() != initial_soup.prettify():
+            logger.debug("Page changed after interaction")
+            new_soup = filter_html(soup_now)
+
+        return last_message, self.p_reqs, self.uris, new_soup
