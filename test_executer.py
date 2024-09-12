@@ -20,8 +20,8 @@ plan = [
     "Click the 'Register' button.",
 ]
 formated_plan = json.dumps(plan)
-# step = "Check the 'I agree to the terms and conditions' checkbox."
-step = "Click the 'Register' button."
+step = "Check the 'I agree to the terms and conditions' checkbox."
+# step = "Click the 'Register' button."
 interaction = json.dumps(
     Interaction(
         name="Registration Form",

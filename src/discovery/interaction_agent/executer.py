@@ -89,14 +89,14 @@ class Executer:
             return [res]
 
         @tool("fill_text_field")
-        def fill_text_field_tool(xpath_indenfifier: str, value: str):
+        def fill_text_field_tool(xpath_identifier: str, value: str):
             """
             Fill the text field with the given name with the given value.
             """
             logger.info(f"Filling text field with value: {value}")
             # TODO: keep in mind that this is a very simple implementation, XPath is not always the best way to identify,
             #  it may return muliple elements, or the element may not be found at all, so check edgecases, and improve this
-            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+            element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
 
             # clear the field first
             element.clear()
@@ -110,24 +110,24 @@ class Executer:
             actual_value = element.get_attribute("value")
 
             if actual_value == value:
-                res = f"Attempted to fill text field: {xpath_indenfifier} with value: {value}."
+                res = f"Attempted to fill text field: {xpath_identifier} with value: {value}."
             else:
                 soup = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
-                res = f"Error: Attempted to fill text field: {xpath_indenfifier} with value: {value}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
+                res = f"Error: Attempted to fill text field: {xpath_identifier} with value: {value}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
             self.note_uri()
             logger.debug(res)
             return [res]
 
         @tool("fill_text_field_date")
-        def fill_text_field_date_tool(xpath_indenfifier: str, year_value: str, month_value: str, day_value: str):
+        def fill_text_field_date_tool(xpath_identifier: str, year_value: str, month_value: str, day_value: str):
             """
             Fill the date field with the given name with the given value.
             """
             logger.info(f"Filling date field with value: {year_value}-{month_value}-{day_value}")
 
             entry = f"{month_value}-{day_value}-{year_value}"
-            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+            element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
             element.clear()  # clear the field first
             element.send_keys(entry)
 
@@ -139,34 +139,34 @@ class Executer:
             if actual_value == entry or (
                 actual_year == year_value and actual_month == month_value and actual_day == day_value
             ):
-                res = f"Filled date field: {xpath_indenfifier} with value: {entry}."
+                res = f"Filled date field: {xpath_identifier} with value: {entry}."
             else:
                 soup = BeautifulSoup(self.cf.driver.page_source, "html.parser").prettify()
-                res = f"Error: Attempted to fill date field: {xpath_indenfifier} with value: {entry}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
+                res = f"Error: Attempted to fill date field: {xpath_identifier} with value: {entry}. Actual value now: {actual_value} does not match the expected value. Adjust the value to match the required format and retry. Page source: \n{soup}"
 
             self.note_uri()
             logger.debug(res)
             return [res]
 
         @tool("select_option")
-        def select_option_tool(xpath_indenfifier: str, visible_value: str):
+        def select_option_tool(xpath_identifier: str, visible_value: str):
             """
             Select the option from a select menu.
             """
             logger.info(f"Selecting option with value: {visible_value}")
-            element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+            element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
             select = Select(element)
             select.select_by_visible_text(visible_value)
 
             actual_value = select.first_selected_option.text
 
             self.note_uri()
-            res = f"Attempted to select option: {xpath_indenfifier} with value: {visible_value}. Actual value now: {actual_value}"
+            res = f"Attempted to select option: {xpath_identifier} with value: {visible_value}. Actual value now: {actual_value}"
             logger.debug(res)
             return [res]
 
         @tool("click")
-        def click_tool(xpath_indenfifier: str, using_javascript: bool = False):
+        def click_tool(xpath_identifier: str, using_javascript: bool = False):
             """
             Click the element with the given identifier using selenium.
 
@@ -175,26 +175,26 @@ class Executer:
             Click only one element at a time, to avoid issues with multiple elements being clicked at the same time.
             """
             if self.click_in_progress:
-                logger.info(f"Clicking element with name: {xpath_indenfifier} blocked")
+                logger.info(f"Clicking element with name: {xpath_identifier} blocked")
                 res = "Error: Click in progress, please wait for the previous click to finish."
                 logger.debug(res)
                 return [res]
 
             self.click_in_progress = True
             try:
-                logger.info(f"Clicking element with name: {xpath_indenfifier}, using JavaScript: {using_javascript}")
+                logger.info(f"Clicking element with name: {xpath_identifier}, using JavaScript: {using_javascript}")
 
                 time.sleep(self.cf.selenium_rate)
                 soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
                 try:
-                    element = self.cf.driver.find_element(By.XPATH, xpath_indenfifier)
+                    element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
                     if using_javascript:
                         self.cf.driver.execute_script("arguments[0].click();", element)
                     else:
                         element.click()
                 except Exception as e:
                     res = f"""
-                    Error: Attempted to click element with name: {xpath_indenfifier}.
+                    Error: Attempted to click element with name: {xpath_identifier}.
                     Exception Message:
                     {e}
 
@@ -202,14 +202,14 @@ class Executer:
                     alternatively, use the JavaScript click option to force the click.
                     """
                     logger.debug(res)
-                    logger.info(f"Pressing {xpath_indenfifier} failed...")
+                    logger.info(f"Pressing {xpath_identifier} failed...")
                     return [res]
                 time.sleep(self.cf.selenium_rate)
                 soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
 
                 if soup_before == soup_after:
                     res = f"""
-                    Clicked element with name: {xpath_indenfifier}, but soup before and after are the same.
+                    Clicked element with name: {xpath_identifier}, but soup before and after are the same.
                     Check outgoing requests to see if something happened.
                     """
                 else:
@@ -220,7 +220,7 @@ class Executer:
                     )
                     diff_print = "\n".join(list(diff))
                     res = f"""
-                    Clicked element with name: {xpath_indenfifier}.
+                    Clicked element with name: {xpath_identifier}.
                     Page changed. Diff:
                     {diff_print}
                     """
@@ -324,6 +324,7 @@ class Executer:
 
     def _initialize_app(self):
         def should_continue(state: TaskState) -> Literal["tools", "summarize"]:  # type: ignore
+            logger.info("[should_continue]")
             logger.debug("Checking if should continue")
             messages = state["messages"]
             last_message = messages[-1]
@@ -332,12 +333,14 @@ class Executer:
             return "summarize"
 
         def call_model(state: TaskState):
+            logger.info("[call_model]")
             messages = state["messages"]
             logger.debug(f"Calling model with messages: {messages}")
             response = self.cf.model.invoke(messages)
             return {"messages": response}
 
         def summarize_task(state: TaskState):
+            logger.info("[summarize_task]")
             messages = state["messages"]
             # use llm to .with_structured_output(TaskModel) to get the task
             response = self.cf.model.with_structured_output(TaskModel).invoke(

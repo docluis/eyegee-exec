@@ -8,13 +8,20 @@ from langgraph.graph import StateGraph, START, END
 
 # from pydantic import BaseModel
 from langchain_core.pydantic_v1 import BaseModel, Field
-
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
+from src.discovery.interaction_agent.tools.click import Click
+from src.discovery.interaction_agent.tools.fill_text_field import FillTextField
 from src.discovery.interaction_agent.executer import Executer, TaskModel
 from src.log import logger
 from src.discovery.utils import filter_html
-from src.discovery.interaction_agent.prompts import high_high_level_planner_prompt, high_level_planner_prompt
+from src.discovery.interaction_agent.prompts import (
+    high_high_level_planner_prompt,
+    high_level_planner_prompt,
+    react_agent_prompt,
+)
 
 
 class HighHighLevelPlan(BaseModel):
@@ -79,7 +86,7 @@ class InteractionAgent:
         self.app = self._init_app()
 
     def _init_tools(self):
-        return []
+        return [Click(cf=self.cf), FillTextField(cf=self.cf)]
 
     def _init_app(self):
         def should_end(state: PlanExecute) -> Literal["executer", "__end__"]:
@@ -94,6 +101,10 @@ class InteractionAgent:
             HighHighLevelPlan
         )
         high_level_planner = high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
+        solver = create_react_agent(
+            self.cf.model, tools=self.tools, prompt=react_agent_prompt, output_parser=JSONAgentOutputParser()
+        )
+        sovler_executor = AgentExecutor(agent=solver, tools=self.tools)
 
         def high_level_plan_step(state: PlanExecute) -> HighLevelPlan:
             plans = []
@@ -113,22 +124,35 @@ class InteractionAgent:
         def execute_step(state: PlanExecute):
             # TODO: Recreate this so that completed tasks are grouped by approach (basically overwrite the PlanModel)
             tests = []
-            executer = Executer(self.cf)
+            # executer = Executer(self.cf)
             for plan in state["plan"]:
                 logger.info(f"Approach: {plan.approach}")
                 test = TestModel(approach=plan.approach, steps=[])
                 self.cf.driver.get(f"{self.cf.target}{state['uri']}")
                 time.sleep(self.cf.selenium_rate)
                 for step in plan.plan:
-                    res = executer.execute(
-                        approach=plan.approach,
-                        plan=plan.plan,
-                        interaction=state["interaction"],
-                        soup=state["page_soup"],
-                        step=step,
+                    # res = executer.execute(
+                    #     approach=plan.approach,
+                    #     plan=plan.plan,
+                    #     interaction=state["interaction"],
+                    #     soup=state["page_soup"],
+                    #     step=step,
+                    # )
+                    # test.steps.append(res)
+                    output = sovler_executor.invoke(
+                        {
+                            "task": step,
+                            "interaction": state["interaction"],
+                            "page_soup": state["page_soup"],
+                            "approach": plan.approach,
+                        }
                     )
-                    test.steps.append(res)
-                tests.append(test)
+                    logger.info(f"#### Output:\n"
+                                f"approach: {plan.approach}\n"
+                                f"task: {output['task']}\n"
+                                f"interaction: {output['interaction']}\n"
+                                "####\n")
+                # tests.append(test)
             return {"tests": state["tests"] + tests}
 
         def high_level_replan_step(state: PlanExecute) -> PlanExecute:
@@ -189,11 +213,11 @@ class InteractionAgent:
         #     print(f"{i}. Approach: {approach}")
         #     tasks = result["past_steps"][i]
 
-        print("Tests:")
-        for test in result["tests"]:
-            print(f"Approach: {test.approach}")
-            for step in test.steps:
-                print(f"\t{step.task}")
-                print(f"\t\tStatus: {step.status}")
-                print(f"\t\tResult: {step.result}")
+        # print("Tests:")
+        # for test in result["tests"]:
+        #     print(f"Approach: {test.approach}")
+        #     for step in test.steps:
+        #         print(f"\t{step.task}")
+        #         print(f"\t\tStatus: {step.status}")
+        #         print(f"\t\tResult: {step.result}")
         return result
