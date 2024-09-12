@@ -2,7 +2,7 @@ import operator
 
 
 import time
-from typing import Literal, TypedDict, List, Annotated, Tuple, Union
+from typing import Dict, Literal, TypedDict, List, Annotated, Tuple, Union
 from bs4 import BeautifulSoup
 from langgraph.graph import StateGraph, START, END
 
@@ -11,6 +11,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 
 
 from config import Config
+from src.discovery.interaction_agent.executer import Executer, TaskModel
 from src.log import logger
 from src.discovery.utils import filter_html
 from src.discovery.interaction_agent.prompts import high_high_level_planner_prompt, high_level_planner_prompt
@@ -31,20 +32,17 @@ class PlanModel(BaseModel):
     plan: List[str] = Field(description="The step-by-step plan for this approach.")
 
 
+class TestModel(BaseModel):
+    """Model for representing a test for a single approach."""
+
+    approach: str = Field(description="The approach for the interaction feature.")
+    steps: List[TaskModel] = Field(description="The step-by-step plan for this approach.")
+
+
 class HighLevelPlan(BaseModel):
     """High-level plan for each approach."""
 
     plan: List[PlanModel] = Field(description="Detailed plans for each approach")
-
-
-class TaskModel(BaseModel):
-    """Model for representing an individual task."""
-
-    task: str = Field(description="A single task to be executed by the agent.")
-    status: Literal["pending", "success", "failure"] = Field(
-        default="pending", description="Current status of the task."
-    )
-    result: str = Field(default="", description="Result of the task execution.")
 
 
 class Response(BaseModel):
@@ -68,7 +66,8 @@ class PlanExecute(TypedDict):
     page_soup: str
     limit: str
     plan: List[PlanModel]
-    past_steps: Annotated[List[TaskModel], operator.add]
+    tests: Annotated[List[TestModel], operator.add]
+    # past_steps: Annotated[List[TaskModel], operator.add]
     response: str
     approaches: List[str]
 
@@ -91,12 +90,10 @@ class InteractionAgent:
 
         print_and_return = lambda x: print(x) or x
 
-        high_high_level_planner = (
-            high_high_level_planner_prompt | self.cf.model.with_structured_output(HighHighLevelPlan)
+        high_high_level_planner = high_high_level_planner_prompt | self.cf.model.with_structured_output(
+            HighHighLevelPlan
         )
-        high_level_planner = (
-            high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
-        )
+        high_level_planner = high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
 
         def high_level_plan_step(state: PlanExecute) -> HighLevelPlan:
             plans = []
@@ -115,17 +112,24 @@ class InteractionAgent:
 
         def execute_step(state: PlanExecute):
             # TODO: Recreate this so that completed tasks are grouped by approach (basically overwrite the PlanModel)
-            tasks = []
+            tests = []
+            executer = Executer(self.cf)
             for plan in state["plan"]:
                 logger.info(f"Approach: {plan.approach}")
+                test = TestModel(approach=plan.approach, steps=[])
+                self.cf.driver.get(f"{self.cf.target}{state['uri']}")
+                time.sleep(self.cf.selenium_rate)
                 for step in plan.plan:
-                    task = TaskModel(task=step)
-                    # attempt task with react model?
-                    # Dummy code for now
-                    task.status = "success"
-                    task.result = "Task completed successfully."
-                    tasks.append(task)
-            return {"past_steps": state["past_steps"] + tasks}
+                    res = executer.execute(
+                        approach=plan.approach,
+                        plan=plan.plan,
+                        interaction=state["interaction"],
+                        soup=state["page_soup"],
+                        step=step,
+                    )
+                    test.steps.append(res)
+                tests.append(test)
+            return {"tests": state["tests"] + tests}
 
         def high_level_replan_step(state: PlanExecute) -> PlanExecute:
             # look at the current state and decide if we need to replan
@@ -165,7 +169,7 @@ class InteractionAgent:
 
         result = self.app.invoke({"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit})
         print("\n\n######## DONE ########\n\n")
-        
+
         # print("Plans:")
         # for plan in result["plan"]:
         #     print(f"Approach: {plan.approach}")
@@ -180,8 +184,16 @@ class InteractionAgent:
         # print("\n\nResponse:")
         # print(result["response"])
 
-        print("Past Steps")
-        for i, approach in enumerate(result["approaches"]):
-            print(f"{i}. Approach: {approach}")
-            tasks = result["past_steps"][i]
+        # print("Past Steps")
+        # for i, approach in enumerate(result["approaches"]):
+        #     print(f"{i}. Approach: {approach}")
+        #     tasks = result["past_steps"][i]
+
+        print("Tests:")
+        for test in result["tests"]:
+            print(f"Approach: {test.approach}")
+            for step in test.steps:
+                print(f"\t{step.task}")
+                print(f"\t\tStatus: {step.status}")
+                print(f"\t\tResult: {step.result}")
         return result

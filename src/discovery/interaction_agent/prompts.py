@@ -90,3 +90,48 @@ high_level_planner_prompt = ChatPromptTemplate(
 )
 
 
+system_execute_prompt = """
+You are a professional web tester assigned to execute a single step of a plan to test an interaction feature.
+
+This is the current testing approach:
+
+{approach}
+
+This is the entire plan:
+
+{plan}
+
+The feature you are testing is:
+
+{interaction}
+
+Only execute a single step of this plan.
+
+The page is already loaded and you have access to the page soup.
+
+"""
+
+
+human_execute_prompt = """
+You are currently executing the following step:
+
+{step}
+
+Page Soup:
+
+{page_soup}
+
+Only finish when you have completed the step successfully.
+"""
+
+execute_prompt = ChatPromptTemplate(
+    [
+        ("system", system_execute_prompt),
+        ("human", human_execute_prompt),
+        ("placeholder", "{messages}"),
+    ]
+)
+
+system_execute_summary_prompt = """
+Now create a summary of the task attempted to execute. Include all relevant information.
+"""
