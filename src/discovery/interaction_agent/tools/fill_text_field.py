@@ -14,23 +14,14 @@ from selenium.webdriver.common.keys import Keys
 from config import Config
 
 # from src.discovery.interaction_agent.context import Context
+from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-
-
-class Input(BaseModel):
-    xpath_identifier: str = Field(description="The xpath of the text field.")
-    value: str = Field(description="The value to be filled in the text field.", default="")
-
-
-class Output(BaseModel):
-    success: bool = Field(description="Whether the text field was filled successfully.")
-    message: str = Field(description="The message indicating the result of the operation.")
-    error: Optional[str] = Field(description="The error message if the operation failed.")
+from src.discovery.interaction_agent.tool_input_output import FillTextFieldInput, FillTextFieldOutput
 
 
 class FillTextField(BaseTool):
     cf: Config
-    # context: Context
+    context: ToolContext
 
     name = "fill_text_field"
     description = (
@@ -43,14 +34,12 @@ class FillTextField(BaseTool):
         "  - message: str The message indicating the result of the operation."
         "  - error: str The error message if the operation failed."
     )
-    args_schema: Type[BaseModel] = Input
+    args_schema: Type[BaseModel] = FillTextFieldInput
 
-    def _run(self, xpath_identifier: str, value: str = "") -> Output:
+    def _run(self, xpath_identifier: str, value: str = "") -> FillTextFieldOutput:
         """Use the tool."""
+        input = FillTextFieldInput(xpath_identifier=xpath_identifier, value=value)
         try:
-            # input_dict = json.loads(input)
-            # xpath_identifier = input_dict["xpath_identifier"]
-            # value = input_dict["value"]
             logger.info(f"Filling in the text field {xpath_identifier} with {value}")
             element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
             # clear the field first
@@ -63,8 +52,14 @@ class FillTextField(BaseTool):
             actual_value = element.get_attribute("value")
 
             # self.context.note_uri(self.cf)
-            return Output(success=True, message=f"Filled in the text field {xpath_identifier} with {value}.")
+            output = FillTextFieldOutput(
+                success=True, message=f"Filled in the text field {xpath_identifier} with {value}."
+            )
+            self.context.tool_history.append((self.name, input, output))
+            return output
         except Exception as e:
             # logging.error(str(e))
             logging.error("Error: Failed to fill in the text field.")
-            return Output(success=False, message="Failed to fill in the text field.", error=str(e))
+            output = FillTextFieldOutput(success=False, message="Failed to fill in the text field.", error=str(e))
+            self.context.tool_history.append((self.name, input, output))
+            return output

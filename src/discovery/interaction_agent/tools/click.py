@@ -13,23 +13,14 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 
 from config import Config
+from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-
-
-class Input(BaseModel):
-    xpath_identifier: str = Field(description="The xpath of the element to be clicked.")
-    using_javascript: bool = Field(default=False, description="Whether to use JavaScript to click.")
-
-
-class Output(BaseModel):
-    success: bool = Field(description="Whether the element was clicked successfully.")
-    message: str = Field(description="The message indicating the result of the operation.")
-    page_diff: Optional[str] = Field(description="The diff of the page before and after clicking.")
-    error: Optional[str] = Field(description="The error message if the operation failed.")
+from src.discovery.interaction_agent.tool_input_output import ClickInput, ClickOutput
 
 
 class Click(BaseTool):
     cf: Config
+    context: ToolContext
     # context: Context
 
     name = "click"
@@ -44,10 +35,11 @@ class Click(BaseTool):
         "  - page_diff: str The diff of the page before and after clicking."
         "  - error: str The error message if the operation failed."
     )
-    args_schema: Type[BaseModel] = Input
+    args_schema: Type[BaseModel] = ClickInput
 
-    def _run(self, xpath_identifier: str, using_javascript: bool = False) -> Output:
+    def _run(self, xpath_identifier: str, using_javascript: bool = False) -> ClickOutput:
         """Use the tool."""
+        input = ClickInput(xpath_identifier=xpath_identifier, using_javascript=using_javascript)
         try:
             logger.info(f"Clicking element with name: {xpath_identifier}, using JavaScript: {using_javascript}")
             time.sleep(self.cf.selenium_rate)
@@ -57,26 +49,30 @@ class Click(BaseTool):
                 self.cf.driver.execute_script("arguments[0].click();", element)
             else:
                 element.click()
-            # TODO: diff stuff
+
             time.sleep(self.cf.selenium_rate)
             soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
             if soup_before == soup_after:
-                res = (
-                    f"Clicked element with name: {xpath_identifier}, but soup before and after are the same."
+                message = (
+                    f"Clicked element with name: {xpath_identifier}, but soup before and after are the same.\n"
                     "Maybe check outgoing requests to see if something happened."
                 )
-                return Output(success=True, message=res)
+                page_diff = None
             else:
-                diff = str(
+                message = f"Clicked element with name: {xpath_identifier}."
+                page_diff = str(
                     unified_diff(
                         soup_before.prettify().splitlines(),
                         soup_after.prettify().splitlines(),
                         lineterm="",
                     )
-                )
-                res = f"Clicked element with name: {xpath_identifier}."
-                return Output(success=True, message=res, page_diff=diff.strip())
+                ).strip()
+            output = ClickOutput(success=True, message=message, page_diff=page_diff)
+            self.context.tool_history.append((self.name, input, output))
+            return output
         except Exception as e:
             # logging.error(str(e))
             logging.error("Error: Failed to click element.")
-            return Output(success=False, message="Failed to click element.", error=str(e))
+            output = ClickOutput(success=False, message="Failed to click element.", error=str(e))
+            self.context.tool_history.append((self.name, input, output))
+            return output

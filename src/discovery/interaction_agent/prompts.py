@@ -50,9 +50,11 @@ You are a professional web tester assigned to evaluate a specific element on a w
 Given a specific approach create a plan of individual steps to test an interaction feature.
 The goal is to uncover the functionality of the element given the current approach.
 
-Keep in mind that the page is already loaded and you have access to the page soup.
-
 This plan should be specific to the element, the page soup and the current approach, however this is just the initial plan, thus it should not be too detailed.
+
+Keep in mind that the page is already loaded and you have access to the page soup.
+For interaction that likely send requests, make sure to analyze the outgoing requests and include it in the plan.
+Also examine how the page responds to the interaction by analyzing the page soup.
 
 # Example:
 Input:
@@ -66,7 +68,7 @@ HTML code of the page
 Output:
 *PlanModel*:
 approach: Test the login form with username and password containing special characters.
-plan: ["Enter a username with special characters.", "Enter a password with special characters.", "Click the login button."]
+plan: ["Enter a username with special characters.", "Enter a password with special characters.", "Click the login button.", "Check Outgoing Requests for login attempt.", "Check Page Soup for error messages or success messages"]
 
 """
 

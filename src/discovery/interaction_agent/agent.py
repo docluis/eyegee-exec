@@ -12,10 +12,15 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
+from src.discovery.interaction_agent.tool_context import ToolContext
 from src.discovery.interaction_agent.tools.click import Click
 from src.discovery.interaction_agent.tools.fill_text_field import FillTextField
+from src.discovery.interaction_agent.tools.navigate import Navigate
+from src.discovery.interaction_agent.tools.get_page_soup import GetPageSoup
+from src.discovery.interaction_agent.tools.get_outgoing_requests import GetOutgoingRequests
+from src.discovery.interaction_agent.tools.select_option import SelectOption
 from src.log import logger
-from src.discovery.utils import filter_html, parse_solver_output
+from src.discovery.utils import filter_html
 from src.discovery.interaction_agent.prompts import (
     high_high_level_planner_prompt,
     high_level_planner_prompt,
@@ -88,11 +93,18 @@ class PlanExecute(TypedDict):
 class InteractionAgent:
     def __init__(self, cf: Config) -> None:
         self.cf = cf
-        self.tools = self._init_tools()
+        # self.tools = self._init_tools()
         self.app = self._init_app()
 
-    def _init_tools(self):
-        return [Click(cf=self.cf), FillTextField(cf=self.cf)]
+    def _init_tools(self, context: ToolContext):
+        return [
+            Navigate(cf=self.cf, context=context),
+            Click(cf=self.cf, context=context),
+            FillTextField(cf=self.cf, context=context),
+            GetPageSoup(cf=self.cf, context=context),
+            GetOutgoingRequests(cf=self.cf, context=context),
+            SelectOption(cf=self.cf, context=context),
+        ]
 
     def _init_app(self):
         def should_end(state: PlanExecute) -> Literal["executer", "__end__"]:
@@ -106,11 +118,8 @@ class InteractionAgent:
         high_high_level_planner = high_high_level_planner_prompt | self.cf.model.with_structured_output(
             HighHighLevelPlan
         )
+        # TODO: add tool info to the prompt?
         high_level_planner = high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
-        solver = create_react_agent(
-            self.cf.model, tools=self.tools, prompt=react_agent_prompt, output_parser=JSONAgentOutputParser()
-        )
-        solver_executor = AgentExecutor(agent=solver, tools=self.tools)
 
         def high_level_plan_step(state: PlanExecute) -> HighLevelPlan:
             plans = []
@@ -141,6 +150,13 @@ class InteractionAgent:
                 # we can also track additional uris and so on here
                 # old interactionagent returns p_requests, links, and soup (if new)
                 # we could pass all the gathered data to the reporter
+
+                context = ToolContext(cf=self.cf, initial_uri=uri) # Create a new context for each test
+                tools = self._init_tools(context)
+                solver = create_react_agent(
+                    self.cf.model, tools=tools, prompt=react_agent_prompt, output_parser=JSONAgentOutputParser()
+                )
+                solver_executor = AgentExecutor(agent=solver, tools=tools)
                 logger.info(f"Approach: {plan.approach}")
                 test = TestModel(approach=plan.approach, steps=[])
                 self.cf.driver.get(f"{self.cf.target}{uri}")
@@ -159,8 +175,20 @@ class InteractionAgent:
                     completed_task.status = solved_state["output"]["status"]
                     completed_task.result = solved_state["output"]["result"]
                     # TODO: get outgoing requests + diff page soup here?
+                    # maybe statically parse the page soup here and compare with the original soup
+                    # same for outgoing requests, maybe its better to just statically parse the requests here,
+                    # instead of letting the agent use the tool
+                    # we could pass to the reporter (and replanner):
+                    #   - approach
+                    #   - plan
+                    #   - state.steps
+                    #   - tool_histories
+                    #   - the soup changes
+                    #   - the outgoing requests change
+                    #   - the links change (absolute?)
                     test.steps.append(completed_task)
                 tests.append(test)
+                logger.info(f"Tool history: {context.tool_history}")
             return {"tests": state["tests"] + tests}
 
         def high_level_replan_step(state: PlanExecute) -> PlanExecute:
