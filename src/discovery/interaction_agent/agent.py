@@ -14,9 +14,8 @@ from langchain.agents.output_parsers import JSONAgentOutputParser
 from config import Config
 from src.discovery.interaction_agent.tools.click import Click
 from src.discovery.interaction_agent.tools.fill_text_field import FillTextField
-from src.discovery.interaction_agent.executer import Executer, TaskModel
 from src.log import logger
-from src.discovery.utils import filter_html
+from src.discovery.utils import filter_html, parse_solver_output
 from src.discovery.interaction_agent.prompts import (
     high_high_level_planner_prompt,
     high_level_planner_prompt,
@@ -38,11 +37,14 @@ class PlanModel(BaseModel):
     approach: str = Field(description="The approach for the interaction feature.")
     plan: List[str] = Field(description="The step-by-step plan for this approach.")
 
+
 class CompletedTask(BaseModel):
     """Model for representing a completed step of a plan for a single approach."""
+
     task: str = Field(description="The task that was executed.")
-    status: str = Field(description="The status of the task.")
-    result: str = Field(description="The result of the task.")
+    status: str = Field(default="pending", description="The status of the task.")
+    result: str = Field(default="", description="The result of the task.")
+
 
 class TestModel(BaseModel):
     """Model for representing a test for a single approach."""
@@ -77,11 +79,10 @@ class PlanExecute(TypedDict):
     interaction: str
     page_soup: str
     limit: str
+    approaches: List[str]
     plan: List[PlanModel]
     tests: Annotated[List[TestModel], operator.add]
-    # past_steps: Annotated[List[TaskModel], operator.add]
     response: str
-    approaches: List[str]
 
 
 class InteractionAgent:
@@ -127,24 +128,26 @@ class InteractionAgent:
             return HighLevelPlan(plan=plans)
 
         def execute_step(state: PlanExecute):
-            # TODO: Recreate this so that completed tasks are grouped by approach (basically overwrite the PlanModel)
             tests = []
-            # executer = Executer(self.cf)
+            uri = state["uri"]
             for plan in state["plan"]:
+                # we want to save the tool data for each plan
+                # create a new context for each plan?
+                # this would mean each plan needs its own tool
+                # moving solver and solver_executor here is no problem
+                # we could also create new tools here, with a new context
+                # this context would passively store additional data
+                # such as each tool call, with inputs and outputs
+                # we can also track additional uris and so on here
+                # old interactionagent returns p_requests, links, and soup (if new)
+                # we could pass all the gathered data to the reporter
                 logger.info(f"Approach: {plan.approach}")
                 test = TestModel(approach=plan.approach, steps=[])
-                self.cf.driver.get(f"{self.cf.target}{state['uri']}")
+                self.cf.driver.get(f"{self.cf.target}{uri}")
                 time.sleep(self.cf.selenium_rate)
                 for task in plan.plan:
-                    # res = executer.execute(
-                    #     approach=plan.approach,
-                    #     plan=plan.plan,
-                    #     interaction=state["interaction"],
-                    #     soup=state["page_soup"],
-                    #     step=step,
-                    # )
-                    # test.steps.append(res)
-                    output = solver_executor.invoke(
+                    completed_task = CompletedTask(task=task)
+                    solved_state = solver_executor.invoke(
                         {
                             "task": task,
                             "interaction": state["interaction"],
@@ -152,18 +155,10 @@ class InteractionAgent:
                             "approach": plan.approach,
                         }
                     )
-                    logger.info(f"#### Output:\n"
-                                f"keys: {output.keys()}\n"
-                                f"approach: {plan.approach}\n"
-                                f"task: {output['task']}\n"
-                                f"interaction: {output['interaction']}\n"
-                                f"output: {output['output']}\n"
-                                "####\n")
-                    completed_task = CompletedTask(
-                        task=task,
-                        status="success", # TODO: Implement this
-                        result=output["output"],
-                    )
+                    print(f"solved state keys: {solved_state.keys()}")
+                    completed_task.status = solved_state["output"]["status"]
+                    completed_task.result = solved_state["output"]["result"]
+                    # TODO: get outgoing requests + diff page soup here?
                     test.steps.append(completed_task)
                 tests.append(test)
             return {"tests": state["tests"] + tests}
@@ -204,7 +199,8 @@ class InteractionAgent:
         originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
         soup = filter_html(originial_soup).prettify()
 
-        result = self.app.invoke({"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit})
+        result = self.app.invoke(input={"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit})
+
         print("\n\n######## DONE ########\n\n")
 
         # print the tests

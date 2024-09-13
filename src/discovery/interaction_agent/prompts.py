@@ -195,7 +195,10 @@ Action:
 ```
 {{
   "action": "Final Answer",
-  "action_input": "Final response to human"
+  "action_input": {{
+    "result": "Final response to human, noting any important details",
+    "status": "Status of the individiual task (either 'success', 'failure', or 'incomplete')"
+  }}
 }}
 ```
 
@@ -206,6 +209,8 @@ human_react_agent_prompt = """
 Task: {task}
 
 Make sure to only move on and provide the final answer, when you have completed the current task.
+
+Try to solve the task carefully and accurately. Attempt multiple times before returning a 'failure' or 'incomplete' status.
 
 Thought: {agent_scratchpad}
 (reminder to respond in a JSON blob no matter what)
