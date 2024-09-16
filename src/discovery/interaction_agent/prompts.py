@@ -53,8 +53,6 @@ The goal is to uncover the functionality of the element given the current approa
 This plan should be specific to the element, the page soup and the current approach, however this is just the initial plan, thus it should not be too detailed.
 
 Keep in mind that the page is already loaded and you have access to the page soup.
-For interaction that likely send requests, make sure to analyze the outgoing requests and include it in the plan.
-Also examine how the page responds to the interaction by analyzing the page soup.
 
 # Example:
 Input:
@@ -68,7 +66,7 @@ HTML code of the page
 Output:
 *PlanModel*:
 approach: Test the login form with username and password containing special characters.
-plan: ["Enter a username with special characters.", "Enter a password with special characters.", "Click the login button.", "Check Outgoing Requests for login attempt.", "Check Page Soup for error messages or success messages"]
+plan: ["Enter a username with special characters.", "Enter a password with special characters.", "Click the login button."]
 
 """
 
@@ -131,32 +129,7 @@ execute_prompt = ChatPromptTemplate(
 system_execute_summary_prompt = """
 Now create a summary of the task attempted to execute. Include all relevant information.
 """
-# react_agent_prompt = ChatPromptTemplate.from_template(
-#     """
-# You are tasked with interacting with a web page to test a specific feature.
-# The website source page is:
-# ```html
-# {page_soup}
-# ```
-# The feature you are testing is:
-# {interaction}
-# Your aproach is: {approach}
-# Solve the following tasks as best you can. You have access to the following tools:
-# {tools}
-# Use the following format:
-# Question: the input question you must answer
-# Thought: you should always think about what to do
-# Action: the action to take, should be one of [{tool_names}]
-# Action Input: the input to the action
-# Observation: the result of the action
-# ... (this Thought/Action/Action Input/Observation can repeat N times)
-# Thought: I now know the final answer
-# Final Answer: the final answer to the original input question
-# Begin!
-# Task: {task}
-# Thought:{agent_scratchpad}
-# """
-# )
+
 system_react_agent_prompt = """
 You are tasked with interacting with a web page to test a specific feature.
 
@@ -222,5 +195,54 @@ react_agent_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", system_react_agent_prompt),
         ("human", human_react_agent_prompt),
+    ]
+)
+
+system_high_level_replanner_prompt = """
+You are a professional web tester assigned to evaluate a specific element on a web application page.
+
+Given a specific approach, the previous plan and the observed steps, the goal is to uncover the functionality of the element given the current approach.
+You are tasked with either providing a new plan to test the feature or responding to the user that the test is complete.
+
+Your task is to test the following feature of a web application:
+{interaction}
+
+Your approach is:
+{approach}
+
+Your previous plan was:
+{previous_plan}
+
+You took the following steps to complete the plan:
+{previous_steps}
+
+You observed the following outgoing requests:
+{outgoing_requests}
+
+Page Source Difference befor and after the interaction:
+{page_source_diff}
+
+If you are satisfied with the previous plan and the observed steps, you can return a Response to the user stating that the test is complete.
+Otherwise, for example if new input fields appear after partial interaction, return a new updated plan that best tests the feature and matches the approach.
+
+Important:Only return a new plan, if the previous plan was not sufficient to test the feature.
+Keep in mind that testing a feature does not neccessarily only have to yield positive results.
+"""
+
+# human_high_level_replanner_prompt = """
+# *URI*: {uri}
+# *Element*:
+# {interaction}
+# *Approach*:
+# {approach}
+# *Page Soup*:
+# {page_soup}
+
+# """
+
+high_level_replanner_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_high_level_replanner_prompt),
+        # ("human", human_high_level_replanner_prompt),
     ]
 )

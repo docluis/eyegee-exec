@@ -1,3 +1,5 @@
+from difflib import unified_diff
+import json
 import operator
 
 
@@ -12,6 +14,8 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
+from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
+from src.discovery.llm import llm_parse_requests_for_apis
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.discovery.interaction_agent.tools.click import Click
 from src.discovery.interaction_agent.tools.fill_text_field import FillTextField
@@ -20,63 +24,22 @@ from src.discovery.interaction_agent.tools.get_page_soup import GetPageSoup
 from src.discovery.interaction_agent.tools.get_outgoing_requests import GetOutgoingRequests
 from src.discovery.interaction_agent.tools.select_option import SelectOption
 from src.log import logger
-from src.discovery.utils import filter_html
+from src.discovery.utils import filter_html, format_steps, parse_page_requests
 from src.discovery.interaction_agent.prompts import (
     high_high_level_planner_prompt,
     high_level_planner_prompt,
     react_agent_prompt,
+    high_level_replanner_prompt,
 )
-
-
-class HighHighLevelPlan(BaseModel):
-    """High-level plan for testing an interaction feature."""
-
-    approaches: List[str] = Field(
-        description="Different approaches to test an interaction feature, should be in sorted order"
-    )
-
-
-class PlanModel(BaseModel):
-    """Model for representing the plan for a single approach."""
-
-    approach: str = Field(description="The approach for the interaction feature.")
-    plan: List[str] = Field(description="The step-by-step plan for this approach.")
-
-
-class CompletedTask(BaseModel):
-    """Model for representing a completed step of a plan for a single approach."""
-
-    task: str = Field(description="The task that was executed.")
-    status: str = Field(default="pending", description="The status of the task.")
-    result: str = Field(default="", description="The result of the task.")
-
-
-class TestModel(BaseModel):
-    """Model for representing a test for a single approach."""
-
-    approach: str = Field(description="The approach for the interaction feature.")
-    steps: List[CompletedTask] = Field(description="The steps executed for this approach.")
-
-
-class HighLevelPlan(BaseModel):
-    """High-level plan for each approach."""
-
-    plan: List[PlanModel] = Field(description="Detailed plans for each approach")
-
-
-class Response(BaseModel):
-    """Response to user."""
-
-    response: str
-
-
-class Act(BaseModel):
-    """Action to perform."""
-
-    action: Union[Response, HighLevelPlan] = Field(
-        description="Action to perform. If you want to respond to user, use Response. "
-        "If you need to further use tools to get the answer, use HighLevelPlan."
-    )
+from src.discovery.interaction_agent.agent_classes import (
+    HighHighLevelPlan,
+    # HighLevelPlan,
+    PlanModel,
+    Response,
+    TestModel,
+    CompletedTask,
+    Act,
+)
 
 
 class PlanExecute(TypedDict):
@@ -85,7 +48,7 @@ class PlanExecute(TypedDict):
     page_soup: str
     limit: str
     approaches: List[str]
-    plan: List[PlanModel]
+    plans: List[PlanModel]
     tests: Annotated[List[TestModel], operator.add]
     response: str
 
@@ -102,13 +65,13 @@ class InteractionAgent:
             Click(cf=self.cf, context=context),
             FillTextField(cf=self.cf, context=context),
             GetPageSoup(cf=self.cf, context=context),
-            GetOutgoingRequests(cf=self.cf, context=context),
+            # GetOutgoingRequests(cf=self.cf, context=context),
             SelectOption(cf=self.cf, context=context),
         ]
 
     def _init_app(self):
-        def should_end(state: PlanExecute) -> Literal["executer", "__end__"]:
-            if "response" in state and state["response"]:
+        def should_report(state: PlanExecute) -> Literal["executer", "__end__"]:
+            if "plans" in state and state["plans"] == []:
                 return "__end__"
             else:
                 return "executer"
@@ -120,8 +83,9 @@ class InteractionAgent:
         )
         # TODO: add tool info to the prompt?
         high_level_planner = high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
+        high_level_replanner = high_level_replanner_prompt | self.cf.model.with_structured_output(Act)
 
-        def high_level_plan_step(state: PlanExecute) -> HighLevelPlan:
+        def high_level_plan_step(state: PlanExecute):
             plans = []
             for approach in state["approaches"]:
                 plan = high_level_planner.invoke(
@@ -134,12 +98,12 @@ class InteractionAgent:
                 )
                 plans.append(plan)
 
-            return HighLevelPlan(plan=plans)
+            return {"plans": plans}
 
         def execute_step(state: PlanExecute):
             tests = []
             uri = state["uri"]
-            for plan in state["plan"]:
+            for plan in state["plans"]:
                 # we want to save the tool data for each plan
                 # create a new context for each plan?
                 # this would mean each plan needs its own tool
@@ -151,53 +115,95 @@ class InteractionAgent:
                 # old interactionagent returns p_requests, links, and soup (if new)
                 # we could pass all the gathered data to the reporter
 
-                context = ToolContext(cf=self.cf, initial_uri=uri) # Create a new context for each test
+                context = ToolContext(cf=self.cf, initial_uri=uri)  # Create a new context for each test
                 tools = self._init_tools(context)
                 solver = create_react_agent(
                     self.cf.model, tools=tools, prompt=react_agent_prompt, output_parser=JSONAgentOutputParser()
                 )
                 solver_executor = AgentExecutor(agent=solver, tools=tools)
-                logger.info(f"Approach: {plan.approach}")
-                test = TestModel(approach=plan.approach, steps=[])
+                logger.info("")
+                logger.info(f"#### Next Approach: {plan.approach}")
+                soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+                soup_before = filter_html(soup_before)
+                test = TestModel(approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan)
                 self.cf.driver.get(f"{self.cf.target}{uri}")
                 time.sleep(self.cf.selenium_rate)
                 for task in plan.plan:
                     completed_task = CompletedTask(task=task)
-                    solved_state = solver_executor.invoke(
-                        {
-                            "task": task,
-                            "interaction": state["interaction"],
-                            "page_soup": state["page_soup"],
-                            "approach": plan.approach,
-                        }
-                    )
-                    print(f"solved state keys: {solved_state.keys()}")
-                    completed_task.status = solved_state["output"]["status"]
-                    completed_task.result = solved_state["output"]["result"]
-                    # TODO: get outgoing requests + diff page soup here?
-                    # maybe statically parse the page soup here and compare with the original soup
-                    # same for outgoing requests, maybe its better to just statically parse the requests here,
-                    # instead of letting the agent use the tool
-                    # we could pass to the reporter (and replanner):
-                    #   - approach
-                    #   - plan
-                    #   - state.steps
-                    #   - tool_histories
-                    #   - the soup changes
-                    #   - the outgoing requests change
-                    #   - the links change (absolute?)
+                    try:
+                        solved_state = solver_executor.invoke(
+                            {
+                                "task": task,
+                                "interaction": state["interaction"],
+                                "page_soup": state["page_soup"],
+                                "approach": plan.approach,
+                            }
+                        )
+                        completed_task.status = solved_state["output"]["status"]
+                        completed_task.result = solved_state["output"]["result"]
+                    except Exception as e:
+                        completed_task.status = "error"
+                        completed_task.result = str(e)
+                    completed_task.tool_history = context.get_tool_history_reset()
                     test.steps.append(completed_task)
-                tests.append(test)
-                logger.info(f"Tool history: {context.tool_history}")
-            return {"tests": state["tests"] + tests}
 
-        def high_level_replan_step(state: PlanExecute) -> PlanExecute:
-            # look at the current state and decide if we need to replan
-            descision = Act(action=Response(response="Dummy Response"))  # TODO: Implement this, for now dummy code
-            if isinstance(descision.action, Response):
-                return {"response": descision.action.response}
-            else:
-                return {"plan": descision.action.plan}
+                # getting page source:
+                originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+                soup_after = filter_html(originial_soup)
+                test.soup_after_str = soup_after.prettify()
+                # parsing page requests and filtering them with LLM
+                p_reqs = parse_page_requests(driver=self.cf.driver, target=self.cf.target, uri=uri, filtered=True)
+                p_reqs_llm = llm_parse_requests_for_apis(
+                    self.cf, json.dumps(p_reqs, indent=4)
+                )  # maybe dont parse with LLM? let that do the reporter?
+                test.outgoing_requests_after = p_reqs_llm
+
+                tests.append(test)
+            return {"tests": state["tests"] + tests, "plans": []}
+
+        def high_level_replan_step(state: PlanExecute):
+            """
+            Loops over all tests in current state and decides if a new plan is needed for each test.
+            """
+            new_plans = []
+            logger.info(f"Replanner step")
+            for test in state["tests"]:
+                logger.info(f"Replanning for approach: {test.approach}")
+                logger.info(f"State keys: {state.keys()}")
+                uri = state["uri"]
+                interaction = state["interaction"]
+                # check if new plan is needed
+                # i need to pass interaction, approach, previous_plan, previous_steps, outgoing_requests, page_soup_before, page_soup_after
+                # print this list test.plan.plan in newlines
+                page_source_diff = str(
+                    unified_diff(
+                        test.soup_before_str.splitlines(),
+                        test.soup_after_str.splitlines(),
+                        lineterm="",
+                    )
+                ).strip()
+                input = {
+                    "uri": uri,
+                    "interaction": interaction,
+                    "approach": test.approach,
+                    "previous_plan": "\n".join(test.plan.plan),
+                    "previous_steps": format_steps(test.steps),
+                    "outgoing_requests": test.outgoing_requests_after,
+                    "page_source_diff": page_source_diff,
+                }
+
+                descision = high_level_replanner.invoke(input=input)
+                if isinstance(descision.action, PlanModel):
+                    logger.info(f"Descision: New plan is needed")
+                    logger.info(f"New Plan: {descision.action.plan}")
+                    new_plans.append(descision.action)
+                elif isinstance(descision.action, Response):
+                    logger.info(f"Descision: No new plan is needed")
+                    logger.info(f"Response: {descision.action.text}")
+
+            return {"plans": []} # currently dummy, so that no replanner is called
+            # TODO: make sure only create new plans, if nessecary (more input fields), then pass the new plans to the executer
+            # return {"plans": new_plans}
 
         workflow = StateGraph(PlanExecute)
         workflow.add_node("high_high_level_planner", high_high_level_planner)
@@ -210,9 +216,7 @@ class InteractionAgent:
         workflow.add_edge("high_high_level_planner", "high_level_planner")
         workflow.add_edge("high_level_planner", "executer")
         workflow.add_edge("executer", "high_level_replanner")
-        workflow.add_conditional_edges("high_level_replanner", should_end)
-
-        # workflow.add_edge("high_level_planner", END)
+        workflow.add_conditional_edges("high_level_replanner", should_report)
 
         app = workflow.compile()
 
@@ -234,11 +238,30 @@ class InteractionAgent:
         # print the tests
         for test in result["tests"]:
             print(f"###Approach: {test.approach}")
+            print(f"###Steps: {len(test.steps)}")
             for step in test.steps:
                 print(f"Task: {step.task}")
-                print(f"Status: {step.status}")
-                print(f"Result: {step.result}")
+                print(f"\tStatus: {step.status}")
+                print(f"\tResult: {step.result}")
+                # print(f"\tTool history: {step.tool_history}")
+                print(f"\tTool history: {len(step.tool_history)}")
+                for tool_call in step.tool_history:
+                    print(f"\t\tTool call: {tool_call[0]}")
+                    print(f"\t\tInput: {tool_call[1]}")
+                    print(f"\t\tOutput")
+                    print(f"\t\t\tSuccess: {tool_call[2].success}")
+                    print(f"\t\t\tMessage: {tool_call[2].message}")
+                    # print(f"\t\t\tError: {tool_call[2].error[:20] if tool_call[2].error else 'No error'}")
+                    # (
+                    #     print(f"\t\t\tOutgoing requests: {tool_call[2].outgoing_requests[:20]}")
+                    #     if tool_call[2].outgoing_requests
+                    #     else None
+                    # )
+                    # print(f"\t\t\tPage source: {tool_call[2].page_source[:20]}") if tool_call[2].page_source else None
                 print("\n")
+            print(f"Soup before: {test.soup_before_str[:20]}")
+            print(f"Soup after: {test.soup_after_str[:20]}")
+            print(f"Outgoing requests after: {test.outgoing_requests_after[:20]}")
             print("\n\n")
 
         return result

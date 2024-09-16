@@ -18,7 +18,7 @@ from config import Config
 from src.discovery.utils import filter_html
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-from src.discovery.interaction_agent.tool_input_output import GetPageSoupInput, GetPageSoupOutput
+from src.discovery.interaction_agent.tool_input_output_classes import GetPageSoupInput, GetPageSoupOutput
 
 
 class GetPageSoup(BaseTool):

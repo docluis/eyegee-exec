@@ -16,7 +16,7 @@ from config import Config
 # from src.discovery.interaction_agent.context import Context
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-from src.discovery.interaction_agent.tool_input_output import NavigateInput, NavigateOutput
+from src.discovery.interaction_agent.tool_input_output_classes import NavigateInput, NavigateOutput
 
 
 class Navigate(BaseTool):

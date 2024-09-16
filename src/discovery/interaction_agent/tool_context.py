@@ -4,7 +4,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.messages import AnyMessage
 
 from config import Config
-from src.discovery.interaction_agent.tool_input_output import AnyInput, AnyOutput
+from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
 
 
 
@@ -17,3 +17,8 @@ class ToolContext(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    def get_tool_history_reset(self):
+        tool_history = self.tool_history
+        self.tool_history = []
+        return tool_history

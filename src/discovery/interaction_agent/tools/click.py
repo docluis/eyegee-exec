@@ -15,7 +15,7 @@ from selenium.webdriver.common.keys import Keys
 from config import Config
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-from src.discovery.interaction_agent.tool_input_output import ClickInput, ClickOutput
+from src.discovery.interaction_agent.tool_input_output_classes import ClickInput, ClickOutput
 
 
 class Click(BaseTool):

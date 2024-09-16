@@ -17,7 +17,7 @@ from config import Config
 from src.discovery.utils import parse_page_requests
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-from src.discovery.interaction_agent.tool_input_output import GetOutgoingRequestsInput, GetOutgoingRequestsOutput
+from src.discovery.interaction_agent.tool_input_output_classes import GetOutgoingRequestsInput, GetOutgoingRequestsOutput
 
 
 class GetOutgoingRequests(BaseTool):
