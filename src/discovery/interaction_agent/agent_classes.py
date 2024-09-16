@@ -42,7 +42,7 @@ class TestModel(BaseModel):
     soup_before_str: str = Field(description="The soup before the test.")
     soup_after_str: str = Field(default=None, description="The soup after the test.")
     # outgoing_requests_before: List[Dict] = Field(description="The outgoing requests before the test.")
-    outgoing_requests_after: List[Dict] = Field(default=None, description="The outgoing requests after the test.")
+    outgoing_requests_after: str = Field(default=None, description="The outgoing requests after the test. (JSON)")
     # TODO: add a flag so the replanner does not need to check this test after checked once and replan is not needed
 
 class Response(BaseModel):

@@ -25,13 +25,13 @@ class Navigate(BaseTool):
 
     name = "navigate"
     description = (
-        "Function: Navigate to a URL."
-        "Args:"
-        "  - url: str The URL to be navigated to. (required)"
-        "Returns:"
-        "  - success: bool Whether the URL was navigated to successfully."
-        "  - message: str The message indicating the result of the operation."
-        "  - error: str The error message if the operation failed."
+        "Function: Navigate to a URL.\n"
+        "Args:\n"
+        "  - url: str The URL to be navigated to. (required)\n"
+        "Returns:\n"
+        "  - success: bool Whether the URL was navigated to successfully.\n"
+        "  - message: str The message indicating the result of the operation.\n"
+        "  - error: str The error message if the operation failed.\n"
     )
     args_schema: Type[BaseModel] = NavigateInput
 

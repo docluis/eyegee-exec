@@ -25,14 +25,14 @@ class FillTextField(BaseTool):
 
     name = "fill_text_field"
     description = (
-        "Function: Fill in a text field."
-        "Args:"
-        "  - xpath_identifier: str The xpath of the element to be clicked. (required)"
-        "  - value: str The value to be filled in the text field. (optional, default: '')"
-        "Returns:"
-        "  - success: bool Whether the text field was filled successfully."
-        "  - message: str The message indicating the result of the operation."
-        "  - error: str The error message if the operation failed."
+        "Function: Fill in a text field.\n"
+        "Args:\n"
+        "  - xpath_identifier: str The xpath of the element to be clicked. (required)\n"
+        "  - value: str The value to be filled in the text field. (optional, default: '')\n"
+        "Returns:\n"
+        "  - success: bool Whether the text field was filled successfully.\n"
+        "  - message: str The message indicating the result of the operation.\n"
+        "  - error: str The error message if the operation failed.\n"
     )
     args_schema: Type[BaseModel] = FillTextFieldInput
 

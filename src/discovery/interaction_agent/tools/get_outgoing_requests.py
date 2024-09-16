@@ -26,14 +26,14 @@ class GetOutgoingRequests(BaseTool):
 
     name = "get_outgoing_requests"
     description = (
-        "Function: Get the outgoing requests."
-        "Args:"
-        "  - filtered: bool Whether the outgoing requests should be filtered. (optional, default: True)"
-        "Returns:"
-        "  - success: bool Whether the outgoing requests were retrieved successfully."
-        "  - message: str The message indicating the result of the operation."
-        "  - outgoing_requests: str The outgoing requests."
-        "  - error: str The error message if the operation failed."
+        "Function: Get the outgoing requests.\n"
+        "Args:\n"
+        "  - filtered: bool Whether the outgoing requests should be filtered. (optional, default: True)\n"
+        "Returns:\n"
+        "  - success: bool Whether the outgoing requests were retrieved successfully.\n"
+        "  - message: str The message indicating the result of the operation.\n"
+        "  - outgoing_requests: str The outgoing requests.\n"
+        "  - error: str The error message if the operation failed.\n"
     )
     args_schema: Type[BaseModel] = GetOutgoingRequestsInput
 

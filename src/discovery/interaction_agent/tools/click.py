@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 
 from config import Config
+from src.discovery.utils import filter_html
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
 from src.discovery.interaction_agent.tool_input_output_classes import ClickInput, ClickOutput
@@ -25,15 +26,15 @@ class Click(BaseTool):
 
     name = "click"
     description = (
-        "Function: Click on an element."
-        "Args:"
-        "  - xpath_identifier: str The xpath of the element to be clicked. (required)"
-        "  - using_javascript: bool Whether to use JavaScript to click. (optional, default: False)"
-        "Returns:"
-        "  - success: bool Whether the element was clicked successfully."
-        "  - message: str The message indicating the result of the operation."
-        "  - page_diff: str The diff of the page before and after clicking."
-        "  - error: str The error message if the operation failed."
+        "Function: Click on an element.\n"
+        "Args:\n"
+        "  - xpath_identifier: str The xpath of the element to be clicked. (required)\n"
+        "  - using_javascript: bool Whether to use JavaScript to click. (optional, default: False)\n"
+        "Returns:\n"
+        "  - success: bool Whether the element was clicked successfully.\n"
+        "  - message: str The message indicating the result of the operation.\n"
+        "  - page_diff: str The diff of the page before and after clicking.\n"
+        "  - error: str The error message if the operation failed.\n"
     )
     args_schema: Type[BaseModel] = ClickInput
 
@@ -52,21 +53,14 @@ class Click(BaseTool):
 
             time.sleep(self.cf.selenium_rate)
             soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-            if soup_before == soup_after:
-                message = (
-                    f"Clicked element with name: {xpath_identifier}, but soup before and after are the same.\n"
-                    "Maybe check outgoing requests to see if something happened."
-                )
-                page_diff = None
-            else:
-                message = f"Clicked element with name: {xpath_identifier}."
-                page_diff = str(
-                    unified_diff(
-                        soup_before.prettify().splitlines(),
-                        soup_after.prettify().splitlines(),
-                        lineterm="",
-                    )
-                ).strip()
+            message = f"Clicked element with name: {xpath_identifier}."
+            page_diff = unified_diff(
+                filter_html(soup_before).prettify().splitlines(),
+                filter_html(soup_after).prettify().splitlines(),
+                lineterm="",
+            )
+            page_diff = "\n".join(list(page_diff)).strip()
+
             output = ClickOutput(success=True, message=message, page_diff=page_diff)
             self.context.tool_history.append((self.name, input, output))
             return output

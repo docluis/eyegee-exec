@@ -25,14 +25,14 @@ class SelectOption(BaseTool):
 
     name = "select_option"
     description = (
-        "Function: Select an option from a select menu."
-        "Args:"
-        "  - xpath_identifier: str The xpath of the select menu. (required)"
-        "  - visible_value: str The visible value of the option to be selected. (required)"
-        "Returns:"
-        "  - success: bool Whether the option was selected successfully."
-        "  - message: str The message indicating the result of the operation."
-        "  - error: str The error message if the operation failed."
+        "Function: Select an option from a select menu.\n"
+        "Args:\n"
+        "  - xpath_identifier: str The xpath of the select menu. (required)\n"
+        "  - visible_value: str The visible value of the option to be selected. (required)\n"
+        "Returns:\n"
+        "  - success: bool Whether the option was selected successfully.\n"
+        "  - message: str The message indicating the result of the operation.\n"
+        "  - error: str The error message if the operation failed.\n"
     )
     args_schema: Type[BaseModel] = SelectOptionInput
 

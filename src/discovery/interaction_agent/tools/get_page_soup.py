@@ -27,14 +27,14 @@ class GetPageSoup(BaseTool):
 
     name = "get_page_soup"
     description = (
-        "Function: Get the page source."
-        "Args:"
-        "  - filtered: bool Whether the page source should be filtered. (optional, default: True)"
-        "Returns:"
-        "  - success: bool Whether the page source was retrieved successfully."
-        "  - message: str The message indicating the result of the operation."
-        "  - page_source: str The page source."
-        "  - error: str The error message if the operation failed."
+        "Function: Get the page source.\n"
+        "Args:\n"
+        "  - filtered: bool Whether the page source should be filtered. (optional, default: True)\n"
+        "Returns:\n"
+        "  - success: bool Whether the page source was retrieved successfully.\n"
+        "  - message: str The message indicating the result of the operation.\n"
+        "  - page_source: str The page source.\n"
+        "  - error: str The error message if the operation failed.\n"
     )
     args_schema: Type[BaseModel] = GetPageSoupInput
 

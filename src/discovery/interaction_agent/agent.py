@@ -129,6 +129,7 @@ class InteractionAgent:
                 self.cf.driver.get(f"{self.cf.target}{uri}")
                 time.sleep(self.cf.selenium_rate)
                 for task in plan.plan:
+                    logger.info(f"# Executing task: {task}")
                     completed_task = CompletedTask(task=task)
                     try:
                         solved_state = solver_executor.invoke(
@@ -136,7 +137,7 @@ class InteractionAgent:
                                 "task": task,
                                 "interaction": state["interaction"],
                                 "page_soup": state["page_soup"],
-                                "approach": plan.approach,
+                                # "approach": plan.approach,
                             }
                         )
                         completed_task.status = solved_state["output"]["status"]
@@ -175,20 +176,19 @@ class InteractionAgent:
                 # check if new plan is needed
                 # i need to pass interaction, approach, previous_plan, previous_steps, outgoing_requests, page_soup_before, page_soup_after
                 # print this list test.plan.plan in newlines
-                page_source_diff = str(
-                    unified_diff(
-                        test.soup_before_str.splitlines(),
-                        test.soup_after_str.splitlines(),
-                        lineterm="",
-                    )
-                ).strip()
+                page_source_diff = unified_diff(
+                    test.soup_before_str.splitlines(),
+                    test.soup_after_str.splitlines(),
+                    lineterm="",
+                )
+                page_source_diff = "\n".join(list(page_source_diff)).strip()
                 input = {
                     "uri": uri,
                     "interaction": interaction,
                     "approach": test.approach,
                     "previous_plan": "\n".join(test.plan.plan),
                     "previous_steps": format_steps(test.steps),
-                    "outgoing_requests": test.outgoing_requests_after,
+                    "outgoing_requests": json.dumps(test.outgoing_requests_after, indent=4),
                     "page_source_diff": page_source_diff,
                 }
 
@@ -201,7 +201,7 @@ class InteractionAgent:
                     logger.info(f"Descision: No new plan is needed")
                     logger.info(f"Response: {descision.action.text}")
 
-            return {"plans": []} # currently dummy, so that no replanner is called
+            return {"plans": []}  # currently dummy, so that no replanner is called
             # TODO: make sure only create new plans, if nessecary (more input fields), then pass the new plans to the executer
             # return {"plans": new_plans}
 
