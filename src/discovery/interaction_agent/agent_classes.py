@@ -44,6 +44,8 @@ class TestModel(BaseModel):
     # outgoing_requests_before: List[Dict] = Field(description="The outgoing requests before the test.")
     outgoing_requests_after: str = Field(default=None, description="The outgoing requests after the test. (JSON)")
     # TODO: add a flag so the replanner does not need to check this test after checked once and replan is not needed
+    checked: bool = Field(default=False, description="Whether the test has been checked for this approach.")
+    in_report: bool = Field(default=False, description="Whether the test is in the final report.")
 
 class Response(BaseModel):
     """Response to user."""

@@ -10,6 +10,7 @@ from langgraph.graph import StateGraph, START, END
 
 # from pydantic import BaseModel
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
@@ -30,6 +31,8 @@ from src.discovery.interaction_agent.prompts import (
     high_level_planner_prompt,
     react_agent_prompt,
     high_level_replanner_prompt,
+    system_reporter_prompt,
+    human_reporter_prompt,
 )
 from src.discovery.interaction_agent.agent_classes import (
     HighHighLevelPlan,
@@ -50,7 +53,7 @@ class PlanExecute(TypedDict):
     approaches: List[str]
     plans: List[PlanModel]
     tests: Annotated[List[TestModel], operator.add]
-    response: str
+    report: str
 
 
 class InteractionAgent:
@@ -70,9 +73,9 @@ class InteractionAgent:
         ]
 
     def _init_app(self):
-        def should_report(state: PlanExecute) -> Literal["executer", "__end__"]:
+        def should_report(state: PlanExecute) -> Literal["executer", "reporter"]:
             if "plans" in state and state["plans"] == []:
-                return "__end__"
+                return "reporter"
             else:
                 return "executer"
 
@@ -104,17 +107,6 @@ class InteractionAgent:
             tests = []
             uri = state["uri"]
             for plan in state["plans"]:
-                # we want to save the tool data for each plan
-                # create a new context for each plan?
-                # this would mean each plan needs its own tool
-                # moving solver and solver_executor here is no problem
-                # we could also create new tools here, with a new context
-                # this context would passively store additional data
-                # such as each tool call, with inputs and outputs
-                # we can also track additional uris and so on here
-                # old interactionagent returns p_requests, links, and soup (if new)
-                # we could pass all the gathered data to the reporter
-
                 context = ToolContext(cf=self.cf, initial_uri=uri)  # Create a new context for each test
                 tools = self._init_tools(context)
                 solver = create_react_agent(
@@ -169,15 +161,15 @@ class InteractionAgent:
             Loops over all tests in current state and decides if a new plan is needed for each test.
             """
             new_plans = []
+            tests = state["tests"]
+            tests_to_check = [test for test in tests if not test.checked]
+            tests_checked = [test for test in tests if test.checked]
             logger.info(f"Replanner step")
-            for test in state["tests"]:
+            for test in tests_to_check:
                 logger.info(f"Replanning for approach: {test.approach}")
                 logger.info(f"State keys: {state.keys()}")
                 uri = state["uri"]
                 interaction = state["interaction"]
-                # check if new plan is needed
-                # i need to pass interaction, approach, previous_plan, previous_steps, outgoing_requests, page_soup_before, page_soup_after
-                # print this list test.plan.plan in newlines
                 page_source_diff = unified_diff(
                     test.soup_before_str.splitlines(),
                     test.soup_after_str.splitlines(),
@@ -189,7 +181,7 @@ class InteractionAgent:
                     "interaction": interaction,
                     "approach": test.approach,
                     "previous_plan": "\n".join(test.plan.plan),
-                    "previous_steps": format_steps(test.steps),
+                    "steps": format_steps(test.steps),
                     "outgoing_requests": json.dumps(test.outgoing_requests_after, indent=4),
                     "page_source_diff": page_source_diff,
                 }
@@ -198,28 +190,68 @@ class InteractionAgent:
                 if isinstance(descision.action, PlanModel):
                     logger.info(f"Descision: New plan is needed")
                     logger.info(f"New Plan: {descision.action.plan}")
+                    # remove the old test from state["tests"]
+                    test.checked = True
+                    test.in_report = False
+                    tests_checked.append(test)
                     new_plans.append(descision.action)
                 elif isinstance(descision.action, Response):
                     logger.info(f"Descision: No new plan is needed")
                     logger.info(f"Response: {descision.action.text}")
+                    test.checked = True
+                    test.in_report = True
+                    tests_checked.append(test)
+            return {"tests": tests_checked, "plans": new_plans}
 
-            return {"plans": []}  # currently dummy, so that no replanner is called
-            # TODO: make sure only create new plans, if nessecary (more input fields), then pass the new plans to the executer
-            # return {"plans": new_plans}
+        def report_step(state: PlanExecute):
+            logger.info(f"Report step")
+            interaction = json.dumps(state["interaction"], indent=4)
+            uri = state["uri"]
+            messages = [("system", system_reporter_prompt.format(interaction=interaction, uri=uri).replace("{", "{{").replace("}", "}}"))]
+            tests_to_report = [test for test in state["tests"] if test.in_report]
+            for test in tests_to_report:
+                steps = format_steps(test.steps)
+                page_source_diff = unified_diff(
+                    test.soup_before_str.splitlines(),
+                    test.soup_after_str.splitlines(),
+                    lineterm="",
+                )
+                page_source_diff = "\n".join(list(page_source_diff)).strip()
+                this_human_reporter_prompt = human_reporter_prompt.format(
+                    approach=test.approach,
+                    plan="\n".join(test.plan.plan),
+                    outgoing_requests=json.dumps(test.outgoing_requests_after, indent=4),
+                    page_source_diff=page_source_diff,
+                    steps=steps,
+                )
+                messages.append(("user", this_human_reporter_prompt.replace("{", "{{").replace("}", "}}")))
+            messages.append(("placeholder", "{messages}"))
+            # pretty print the messages:
+            for message in messages:
+                print(f"Message: {message[0]}")
+                print(f"Content: {message[1]}")
+                print("")
+            # reporter = reporter_prompt | self.cf.model | self.cf.parser
+            reporter_prompt = ChatPromptTemplate.from_messages(messages)
+            reporter = reporter_prompt | self.cf.advanced_model | self.cf.parser
+
+            report = reporter.invoke(input={})
+            logger.info(f"Report:\n{report}")
+            return {"report": "final dummy report"}
 
         workflow = StateGraph(PlanExecute)
         workflow.add_node("high_high_level_planner", high_high_level_planner)
         workflow.add_node("high_level_planner", high_level_plan_step)
         workflow.add_node("executer", execute_step)
         workflow.add_node("high_level_replanner", high_level_replan_step)
+        workflow.add_node("reporter", report_step)
 
         workflow.add_edge(START, "high_high_level_planner")
-
         workflow.add_edge("high_high_level_planner", "high_level_planner")
         workflow.add_edge("high_level_planner", "executer")
         workflow.add_edge("executer", "high_level_replanner")
         workflow.add_conditional_edges("high_level_replanner", should_report)
-
+        workflow.add_edge("reporter", END)
         app = workflow.compile()
 
         mermaid = app.get_graph().draw_mermaid()
@@ -235,35 +267,4 @@ class InteractionAgent:
 
         result = self.app.invoke(input={"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit})
 
-        print("\n\n######## DONE ########\n\n")
-
-        # print the tests
-        for test in result["tests"]:
-            print(f"###Approach: {test.approach}")
-            print(f"###Steps: {len(test.steps)}")
-            for step in test.steps:
-                print(f"Task: {step.task}")
-                print(f"\tStatus: {step.status}")
-                print(f"\tResult: {step.result}")
-                # print(f"\tTool history: {step.tool_history}")
-                print(f"\tTool history: {len(step.tool_history)}")
-                for tool_call in step.tool_history:
-                    print(f"\t\tTool call: {tool_call[0]}")
-                    print(f"\t\tInput: {tool_call[1]}")
-                    print(f"\t\tOutput")
-                    print(f"\t\t\tSuccess: {tool_call[2].success}")
-                    print(f"\t\t\tMessage: {tool_call[2].message}")
-                    # print(f"\t\t\tError: {tool_call[2].error[:20] if tool_call[2].error else 'No error'}")
-                    # (
-                    #     print(f"\t\t\tOutgoing requests: {tool_call[2].outgoing_requests[:20]}")
-                    #     if tool_call[2].outgoing_requests
-                    #     else None
-                    # )
-                    # print(f"\t\t\tPage source: {tool_call[2].page_source[:20]}") if tool_call[2].page_source else None
-                print("\n")
-            print(f"Soup before: {test.soup_before_str[:20]}")
-            print(f"Soup after: {test.soup_after_str[:20]}")
-            print(f"Outgoing requests after: {test.outgoing_requests_after[:20]}")
-            print("\n\n")
-
-        return result
+        return result["report"]

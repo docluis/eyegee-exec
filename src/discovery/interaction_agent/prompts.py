@@ -136,10 +136,6 @@ execute_prompt = ChatPromptTemplate(
     ]
 )
 
-system_execute_summary_prompt = """
-Now create a summary of the task attempted to execute. Include all relevant information.
-"""
-
 system_react_agent_prompt = """
 You are tasked with interacting with a web page to test a specific feature.
 
@@ -267,7 +263,7 @@ Your previous plan was:
 {previous_plan}
 
 You performed the following steps:
-{previous_steps}
+{steps}
 
 Keep in mind that the specific output of the tools has been shortened for the sake of readability. For generating the final output for the user, this data will be provided in full.
 
@@ -282,7 +278,7 @@ New plans should contain all necessary steps to test the feature.
 
 *Important*: Only return a new plan if the previous plan did not fully test the feature.
 
-If you are satisfied with the previous plan and the observed steps, you can return a Response to the user stating that the test is complete.
+If you are satisfied with the previous plan and the observed steps, you can return a Response to the user stating that the test is complete. And providing a reason for not continuing the test.
 """
 
 
@@ -292,3 +288,53 @@ high_level_replanner_prompt = ChatPromptTemplate.from_messages(
         ("human", human_high_level_replanner_prompt),
     ]
 )
+
+system_reporter_prompt = """
+You are a professional web tester assigned to evaluate a specific feature on a web application page.
+
+Your task is to create a detailed, aggregated report of the feature's performance, highlighting key behavior and any issues found during testing.
+
+**Important**:
+  - Summarize how the feature behaves across different tests and describe how the element functions and the server's response from the client side.
+  - Pay attention to any outgoing requests, including their details, and document any differences or patterns observed.
+  - Report unusual behaviors or errors found during testing.
+  - Keep the report brief and focused on key findings and issues.
+
+The tested feature is: **{interaction}**
+
+URI: **{uri}**
+
+This report consolidates multiple tests that assess different aspects of the feature, combining their observations into one cohesive document.
+"""
+
+human_reporter_prompt = """
+## Test Approach Overview
+This test used the following approach: **{approach}**
+
+### Test Plan
+The test followed this plan:
+{plan}
+
+### Steps Performed:
+Here are the steps that were taken during this test:
+{steps}
+
+### Outgoing Requests:
+The following outgoing requests were observed during this interaction:
+{outgoing_requests}
+
+### Page Source Changes:
+Comparing the page source before and after the interaction, the following differences were noted:
+{page_source_diff}
+
+---
+
+"""
+
+
+# reporter_prompt = ChatPromptTemplate.from_messages(
+#     [
+#         ("system", system_reporter_prompt),
+#         ("placeholder", "{messages}"),
+#     ]
+# )
