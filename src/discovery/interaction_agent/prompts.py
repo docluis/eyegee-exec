@@ -219,9 +219,15 @@ Website source page:
 The feature you are testing is:
 {interaction}
 
-The specific task you are executing is: {task}
+The approach you are using is:
+{approach}
 
-IMPORTANT: ONLY EXECUTE THIS SPECIFIC TASK. DO NOT DEVIATE FROM IT.
+Your plan is:
+{plan_str}
+
+The specific task you are now executing is: *{task}*
+
+IMPORTANT: ONLY EXECUTE THIS SPECIFIC TASK. DO NOT DEVIATE FROM IT AND DO NOT SOLVE OTHER TASKS.
 
 Try to solve the task carefully and accurately. If you are unsuccessful after 5 attempts, respond with the status 'failure' and provide a detailed explanation of the steps you have taken.
 

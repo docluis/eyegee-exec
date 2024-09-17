@@ -55,6 +55,6 @@ class Act(BaseModel):
     """Action to perform."""
 
     action: Union[Response, PlanModel] = Field(
-        description="Action to perform. If you want to respond to user, use Response. "
-        "If you need to further use tools to get the answer, use PlanModel."
+        description="Action to perform. If you want to respond to user, send a Response text. \n"
+        "If you need to further use tools to get the answer, use PlanModel with the plan and approach."
     )

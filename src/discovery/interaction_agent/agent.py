@@ -128,6 +128,7 @@ class InteractionAgent:
                 test = TestModel(approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan)
                 self.cf.driver.get(f"{self.cf.target}{uri}")
                 time.sleep(self.cf.selenium_rate)
+                plan_str = "\n".join(plan.plan)
                 for task in plan.plan:
                     logger.info(f"# Executing task: {task}")
                     completed_task = CompletedTask(task=task)
@@ -137,7 +138,8 @@ class InteractionAgent:
                                 "task": task,
                                 "interaction": state["interaction"],
                                 "page_soup": state["page_soup"],
-                                # "approach": plan.approach,
+                                "approach": plan.approach,
+                                "plan_str": plan_str,
                             }
                         )
                         completed_task.status = solved_state["output"]["status"]

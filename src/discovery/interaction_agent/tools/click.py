@@ -29,7 +29,7 @@ class Click(BaseTool):
         "Function: Click on an element.\n"
         "Args:\n"
         "  - xpath_identifier: str The xpath of the element to be clicked. (required)\n"
-        "  - using_javascript: bool Whether to use JavaScript to click. (optional, default: False)\n"
+        "  - using_javascript: bool Whether to use JavaScript to click. (optional, default: True)\n"
         "Returns:\n"
         "  - success: bool Whether the element was clicked successfully.\n"
         "  - message: str The message indicating the result of the operation.\n"
@@ -38,7 +38,7 @@ class Click(BaseTool):
     )
     args_schema: Type[BaseModel] = ClickInput
 
-    def _run(self, xpath_identifier: str, using_javascript: bool = False) -> ClickOutput:
+    def _run(self, xpath_identifier: str, using_javascript: bool = True) -> ClickOutput:
         """Use the tool."""
         input = ClickInput(xpath_identifier=xpath_identifier, using_javascript=using_javascript)
         try:
