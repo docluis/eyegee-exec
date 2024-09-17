@@ -39,7 +39,7 @@ class Navigate(BaseTool):
         """Use the tool."""
         input = NavigateInput(url=url)
         try:
-            logger.info(f"Navigating to the URL {url}")
+            logger.debug(f"Navigating to the URL {url}")
             self.cf.driver.get(url)
             time.sleep(self.cf.selenium_rate)
 

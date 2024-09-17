@@ -40,7 +40,7 @@ class SelectOption(BaseTool):
         """Use the tool."""
         input = SelectOptionInput(xpath_identifier=xpath_identifier, visible_value=visible_value)
         try:
-            logger.info(f"Selecting option with value: {visible_value}")
+            logger.debug(f"Selecting option with value: {visible_value}")
             element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
             select = Select(element)
             select.select_by_visible_text(visible_value)

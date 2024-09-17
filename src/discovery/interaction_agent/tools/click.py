@@ -42,7 +42,7 @@ class Click(BaseTool):
         """Use the tool."""
         input = ClickInput(xpath_identifier=xpath_identifier, using_javascript=using_javascript)
         try:
-            logger.info(f"Clicking element with name: {xpath_identifier}, using JavaScript: {using_javascript}")
+            logger.debug(f"Clicking element with name: {xpath_identifier}, using JavaScript: {using_javascript}")
             time.sleep(self.cf.selenium_rate)
             soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
             element = self.cf.driver.find_element(By.XPATH, xpath_identifier)

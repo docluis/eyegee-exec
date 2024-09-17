@@ -42,7 +42,7 @@ class GetPageSoup(BaseTool):
         """Use the tool."""
         input = GetPageSoupInput(filtered=filtered)
         try:
-            logger.info(f"Getting page source with filtered: {'True' if filtered else 'False'}")
+            logger.debug(f"Getting page source with filtered: {'True' if filtered else 'False'}")
             res = BeautifulSoup(self.cf.driver.page_source, "html.parser")
             # self.last_page_soup = res
 

@@ -41,7 +41,7 @@ class GetOutgoingRequests(BaseTool):
         """Use the tool."""
         input = GetOutgoingRequestsInput(filtered=filtered)
         try:
-            logger.info(f"Getting outgoing requests with filtered: {filtered}")
+            logger.debug(f"Getting outgoing requests with filtered: {filtered}")
             p_reqs = parse_page_requests(
                 driver=self.cf.driver,
                 target=self.cf.target,

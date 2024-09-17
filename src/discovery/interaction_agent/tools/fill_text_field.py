@@ -40,7 +40,7 @@ class FillTextField(BaseTool):
         """Use the tool."""
         input = FillTextFieldInput(xpath_identifier=xpath_identifier, value=value)
         try:
-            logger.info(f"Filling in the text field {xpath_identifier} with {value}")
+            logger.debug(f"Filling in the text field {xpath_identifier} with {value}")
             element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
             # clear the field first
             element.clear()

@@ -7,6 +7,8 @@ import time
 from typing import Dict, Literal, TypedDict, List, Annotated, Tuple, Union
 from bs4 import BeautifulSoup
 from langgraph.graph import StateGraph, START, END
+from rich.console import Console
+from rich.live import Live
 
 # from pydantic import BaseModel
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -15,6 +17,7 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
+from src.pretty_log import FeatureTable
 from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
 from src.discovery.llm import llm_parse_requests_for_apis
 from src.discovery.interaction_agent.tool_context import ToolContext
@@ -43,6 +46,8 @@ from src.discovery.interaction_agent.agent_classes import (
     CompletedTask,
     Act,
 )
+
+console = Console()
 
 
 class PlanExecute(TypedDict):
@@ -79,8 +84,6 @@ class InteractionAgent:
             else:
                 return "executer"
 
-        print_and_return = lambda x: print(x) or x
-
         high_high_level_planner = high_high_level_planner_prompt | self.cf.model.with_structured_output(
             HighHighLevelPlan
         )
@@ -106,54 +109,63 @@ class InteractionAgent:
         def execute_step(state: PlanExecute):
             tests = []
             uri = state["uri"]
-            for plan in state["plans"]:
-                context = ToolContext(cf=self.cf, initial_uri=uri)  # Create a new context for each test
-                tools = self._init_tools(context)
-                solver = create_react_agent(
-                    self.cf.model, tools=tools, prompt=react_agent_prompt, output_parser=JSONAgentOutputParser()
-                )
-                solver_executor = AgentExecutor(agent=solver, tools=tools)
-                logger.info("")
-                logger.info(f"#### Next Approach: {plan.approach}")
-                soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-                soup_before = filter_html(soup_before)
-                test = TestModel(approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan)
-                self.cf.driver.get(f"{self.cf.target}{uri}")
-                time.sleep(self.cf.selenium_rate)
-                plan_str = "\n".join(plan.plan)
-                for task in plan.plan:
-                    logger.info(f"# Executing task: {task}")
-                    completed_task = CompletedTask(task=task)
-                    try:
-                        solved_state = solver_executor.invoke(
-                            {
-                                "task": task,
-                                "interaction": state["interaction"],
-                                "page_soup": state["page_soup"],
-                                "approach": plan.approach,
-                                "plan_str": plan_str,
-                            }
-                        )
-                        completed_task.status = solved_state["output"]["status"]
-                        completed_task.result = solved_state["output"]["result"]
-                    except Exception as e:
-                        completed_task.status = "error"
-                        completed_task.result = str(e)
-                    completed_task.tool_history = context.get_tool_history_reset()
-                    test.steps.append(completed_task)
+            with Live(refresh_per_second=10, console=console) as live:
+                table = FeatureTable(state["plans"], live)
+                for i, plan in enumerate(state["plans"]):
+                    context = ToolContext(cf=self.cf, initial_uri=uri)  # Create a new context for each test
+                    tools = self._init_tools(context)
+                    solver = create_react_agent(
+                        self.cf.model, tools=tools, prompt=react_agent_prompt, output_parser=JSONAgentOutputParser()
+                    )
+                    solver_executor = AgentExecutor(agent=solver, tools=tools)
+                    # logger.info("")
+                    # logger.info(f"#### Next Approach: {plan.approach}")
+                    table.update_approach(i, "running")
+                    soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+                    soup_before = filter_html(soup_before)
+                    test = TestModel(
+                        approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan
+                    )
+                    self.cf.driver.get(f"{self.cf.target}{uri}")
+                    time.sleep(self.cf.selenium_rate)
+                    plan_str = "\n".join(plan.plan)
+                    for j, task in enumerate(plan.plan):
+                        table.update_step(i, j, "running")
+                        # logger.info(f"# Executing task: {task}")
+                        completed_task = CompletedTask(task=task)
+                        try:
+                            solved_state = solver_executor.invoke(
+                                {
+                                    "task": task,
+                                    "interaction": state["interaction"],
+                                    "page_soup": state["page_soup"],
+                                    "approach": plan.approach,
+                                    "plan_str": plan_str,
+                                }
+                            )
+                            completed_task.status = solved_state["output"]["status"]
+                            completed_task.result = solved_state["output"]["result"]
+                        except Exception as e:
+                            completed_task.status = "error"
+                            completed_task.result = str(e)
+                        completed_task.tool_history = context.get_tool_history_reset()
+                        test.steps.append(completed_task)
+                        table.update_step(i, j, completed_task.status)
 
-                # getting page source:
-                originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-                soup_after = filter_html(originial_soup)
-                test.soup_after_str = soup_after.prettify()
-                # parsing page requests and filtering them with LLM
-                p_reqs = parse_page_requests(driver=self.cf.driver, target=self.cf.target, uri=uri, filtered=True)
-                p_reqs_llm = llm_parse_requests_for_apis(
-                    self.cf, json.dumps(p_reqs, indent=4)
-                )  # maybe dont parse with LLM? let that do the reporter?
-                test.outgoing_requests_after = p_reqs_llm
+                    # getting page source:
+                    originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+                    soup_after = filter_html(originial_soup)
+                    test.soup_after_str = soup_after.prettify()
+                    # parsing page requests and filtering them with LLM
+                    p_reqs = parse_page_requests(driver=self.cf.driver, target=self.cf.target, uri=uri, filtered=True)
+                    p_reqs_llm = llm_parse_requests_for_apis(
+                        self.cf, json.dumps(p_reqs, indent=4)
+                    )  # maybe dont parse with LLM? let that do the reporter?
+                    test.outgoing_requests_after = p_reqs_llm
 
-                tests.append(test)
+                    tests.append(test)
+                    table.update_approach(i, "success")
+                table.finish_all_approaches()
             return {"tests": state["tests"] + tests, "plans": []}
 
         def high_level_replan_step(state: PlanExecute):
@@ -207,7 +219,14 @@ class InteractionAgent:
             logger.info(f"Report step")
             interaction = json.dumps(state["interaction"], indent=4)
             uri = state["uri"]
-            messages = [("system", system_reporter_prompt.format(interaction=interaction, uri=uri).replace("{", "{{").replace("}", "}}"))]
+            messages = [
+                (
+                    "system",
+                    system_reporter_prompt.format(interaction=interaction, uri=uri)
+                    .replace("{", "{{")
+                    .replace("}", "}}"),
+                )
+            ]
             tests_to_report = [test for test in state["tests"] if test.in_report]
             for test in tests_to_report:
                 steps = format_steps(test.steps)
@@ -226,12 +245,7 @@ class InteractionAgent:
                 )
                 messages.append(("user", this_human_reporter_prompt.replace("{", "{{").replace("}", "}}")))
             messages.append(("placeholder", "{messages}"))
-            # pretty print the messages:
-            for message in messages:
-                print(f"Message: {message[0]}")
-                print(f"Content: {message[1]}")
-                print("")
-            # reporter = reporter_prompt | self.cf.model | self.cf.parser
+
             reporter_prompt = ChatPromptTemplate.from_messages(messages)
             reporter = reporter_prompt | self.cf.advanced_model | self.cf.parser
 
@@ -254,8 +268,6 @@ class InteractionAgent:
         workflow.add_edge("reporter", END)
         app = workflow.compile()
 
-        mermaid = app.get_graph().draw_mermaid()
-        print(f"mermaid:\n{mermaid}\n")
         return app
 
     def interact(self, uri: str, interaction: str, limit: str = "3") -> str:
