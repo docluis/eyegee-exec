@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 from config import Config
 from src.discovery.schedule import Schedule
 
-# from src.discovery.interactionagent import InteractionAgent
 from src.discovery.interaction_agent.agent import InteractionAgent
 from src.discovery.llm import (
     llm_parse_requests_for_apis,
