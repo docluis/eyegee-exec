@@ -1,68 +1,89 @@
-import time
+from typing import List
 
-from typing import List, Literal, Tuple
-
-from rich.live import Live
-from rich.table import Table
 from rich.console import Console
 from rich.spinner import Spinner
+from rich.live import Live
+from rich.table import Table
 from rich.text import Text
+from time import sleep
 
 from src.discovery.interaction_agent.agent_classes import PlanModel
 
-Status = Literal["error", "success", "failure", "incomplete", "running", "pending"]
+console = Console()
 
-
-class FeatureTable:
-    def __init__(self, plans: List[PlanModel], live: Live):
-        self.live = live
-        self.approaches, self.steps = self._init_data(plans)
+class TestLog():
+    def __init__(self, plans: List[PlanModel]):
+        self.data = self._init_data(plans)
 
     def _init_data(self, plans: List[PlanModel]):
-        approaches = []
-        steps = []
+        data = []
         for plan in plans:
-            these_steps = []
-            approaches.append((plan.approach, "pending"))
-            for step in plan.plan:
-                these_steps.append((step, "pending"))
-            steps.append(these_steps)
-        return approaches, steps
+            this_test = {"approach": plan.approach, "tasks": [], "status": "waiting"}
+            for task in plan.plan:
+                this_test["tasks"].append({"name": task, "status": "waiting"})
+            data.append(this_test)
+        return data
 
-    def update_approach(self, approach_index: int, status: Status):
-        self.approaches[approach_index] = (self.approaches[approach_index][0], status)
-        self.live.update(self.render())
+    def render_tasks(self) -> Table:
+        table = Table.grid(padding=(0, 5))
+        table.add_column("Task", justify="left", overflow="crop")
+        table.add_column("Status", justify="left", overflow="crop", no_wrap=True, min_width=15)
 
-    def update_step(self, approach_index: int, step_index: int, status: Status):
-        self.steps[approach_index][step_index] = (self.steps[approach_index][step_index][0], status)
-        self.live.update(self.render())
+        def get_status_display(status):
+            return {
+                "running": (Spinner("dots", text="running"), "bold"),
+                # "running": (Text("running...", style="bold green"), "bold dim"),
+                "done": (Text("✓ completed", style="bold blue"), "bold dim"),
+                "waiting": (Text("waiting...", style="bold yellow"), "bold dim")
+            }.get(status, (Text(status), "bold"))
 
-    def finish_all_approaches(self):
-        for i in range(len(self.approaches)):
-            self.live.update(self.render())
+        for test in self.data:
+            status_display, style = get_status_display(test["status"])
+            table.add_row(Text(f"Approach: {test['approach']}", style=style), status_display)
+            
+            if test["status"] in ["running", "done"]:
+                for task in test["tasks"]:
+                    status_display, style = get_status_display(task["status"])
+                    table.add_row(Text(f"  • Task: {task['name']}", style=style), status_display)
 
-    def render(self):
-        # TODO: handle fewer lines
-        table = Table.grid(expand=False)
-        table.add_column()
-        table.add_column()
-
-        for approach, plan in zip(self.approaches, self.steps):
-            if approach[1] == "running":
-                table.add_row(Text(approach[0], style="bold"), Text(""))
-                for step in plan:
-                    if step[1] == "running":
-                        table.add_row(Text(f"  - {step[0]}"), Spinner("dots"))
-                    elif step[1] == "success":
-                        table.add_row(Text(f"  - {step[0]}", style="dim"), Text("✔", style="dim"))
-                    elif step[1] == "failure" or step[1] == "error":
-                        table.add_row(Text(f"  - {step[0]}", style="dim"), Text("❌", style="dim"))
-                    elif step[1] == "incomplete":
-                        table.add_row(Text(f"  - {step[0]}", style="dim"), Text("❓", style="dim"))
-                    else:
-                        table.add_row(Text(f"  - {step[0]}", style="dim"), Text(""))
-            elif approach[1] == "pending":
-                table.add_row(Text(approach[0], style="bold dim"), Text(""))
-            else:
-                table.add_row(Text(approach[0], style="bold dim"), Text("✔", style="dim"))
         return table
+    
+    def update_approach(self, approach_index: int, status: str):
+        self.data[approach_index]["status"] = status
+
+    def update_task(self, approach_index: int, task_index: int, status: str):
+        self.data[approach_index]["tasks"][task_index]["status"] = status
+
+
+
+# test_plans = [
+#     PlanModel(approach="approach1", plan=["step1", "step2", "step3"]),
+#     PlanModel(approach="approach2", plan=["step4", "step5", "step6"]),
+#     PlanModel(approach="approach3", plan=["step7", "step8", "step9"]),
+# ]
+
+# test_log = TestLog(test_plans)
+
+
+
+# with Live(test_log.render_tasks(), refresh_per_second=10, console=console) as live:
+#     for i, test in enumerate(test_log.data):
+#         # Update the status of the current task
+#         test_log.update_approach(i, "running")
+#         live.update(test_log.render_tasks())
+
+#         # Simulate a running task with a spinner for a few seconds
+#         for _ in range(10):
+#             sleep(0.1)
+        
+#         for j, task in enumerate(test_log.data[i]["tasks"]):
+#             sleep(0.1)
+#             test_log.update_task(i, j, "running")
+#             live.update(test_log.render_tasks())
+#             sleep(0.5)
+#             test_log.update_task(i, j, "done")
+#             live.update(test_log.render_tasks())
+
+#         # Mark the task as completed
+#         test_log.update_approach(i, "done")
+#         live.update(test_log.render_tasks())

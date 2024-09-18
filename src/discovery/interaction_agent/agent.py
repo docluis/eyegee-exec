@@ -17,7 +17,7 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
-from src.pretty_log import FeatureTable
+from src.pretty_log import TestLog
 from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
 from src.discovery.llm import llm_parse_requests_for_apis
 from src.discovery.interaction_agent.tool_context import ToolContext
@@ -46,9 +46,6 @@ from src.discovery.interaction_agent.agent_classes import (
     CompletedTask,
     Act,
 )
-
-console = Console()
-
 
 class PlanExecute(TypedDict):
     uri: str
@@ -109,8 +106,9 @@ class InteractionAgent:
         def execute_step(state: PlanExecute):
             tests = []
             uri = state["uri"]
-            with Live(refresh_per_second=10, console=console) as live:
-                table = FeatureTable(state["plans"], live)
+            plans = state["plans"]
+            test_log = TestLog(plans)
+            with Live(refresh_per_second=10) as live:
                 for i, plan in enumerate(state["plans"]):
                     context = ToolContext(cf=self.cf, initial_uri=uri)  # Create a new context for each test
                     tools = self._init_tools(context)
@@ -120,17 +118,17 @@ class InteractionAgent:
                     solver_executor = AgentExecutor(agent=solver, tools=tools)
                     # logger.info("")
                     # logger.info(f"#### Next Approach: {plan.approach}")
-                    table.update_approach(i, "running")
+                    test_log.update_approach(i, "running")
+                    live.update(test_log.render_tasks())
                     soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
                     soup_before = filter_html(soup_before)
-                    test = TestModel(
-                        approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan
-                    )
+                    test = TestModel(approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan)
                     self.cf.driver.get(f"{self.cf.target}{uri}")
                     time.sleep(self.cf.selenium_rate)
                     plan_str = "\n".join(plan.plan)
                     for j, task in enumerate(plan.plan):
-                        table.update_step(i, j, "running")
+                        test_log.update_task(i, j, "running")
+                        live.update(test_log.render_tasks())
                         # logger.info(f"# Executing task: {task}")
                         completed_task = CompletedTask(task=task)
                         try:
@@ -150,8 +148,8 @@ class InteractionAgent:
                             completed_task.result = str(e)
                         completed_task.tool_history = context.get_tool_history_reset()
                         test.steps.append(completed_task)
-                        table.update_step(i, j, completed_task.status)
-
+                        test_log.update_task(i, j, "done")
+                        live.update(test_log.render_tasks())
                     # getting page source:
                     originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
                     soup_after = filter_html(originial_soup)
@@ -162,10 +160,10 @@ class InteractionAgent:
                         self.cf, json.dumps(p_reqs, indent=4)
                     )  # maybe dont parse with LLM? let that do the reporter?
                     test.outgoing_requests_after = p_reqs_llm
+                    test_log.update_approach(i, "done")
+                    live.update(test_log.render_tasks())
 
                     tests.append(test)
-                    table.update_approach(i, "success")
-                table.finish_all_approaches()
             return {"tests": state["tests"] + tests, "plans": []}
 
         def high_level_replan_step(state: PlanExecute):
