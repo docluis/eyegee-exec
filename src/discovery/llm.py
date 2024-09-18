@@ -13,7 +13,7 @@ def llm_parse_requests_for_apis(cf, page_requests) -> List[Dict]:
     """
 
     chain = cf.model | cf.parser
-    logger.info("Parsing APIs")
+    logger.debug("Parsing APIs")
     messages = [
         SystemMessage(api_system_message),
         HumanMessage(page_requests),
@@ -35,7 +35,7 @@ def llm_rank_interactions(cf, interactions_names: List[str]) -> List[Dict[str, A
     Rank the given interactions using the LLM model to determine the most important interactions.
     """
     chain = cf.model | cf.parser
-    logger.info("Ranking interactions")
+    logger.debug("Ranking interactions")
     messages = [
         SystemMessage(interaction_ranking_system_message),
         HumanMessage(json.dumps(interactions_names)),

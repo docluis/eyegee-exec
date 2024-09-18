@@ -24,6 +24,8 @@ class Config:
 
         ####### Model #######
         self.model = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+        # self.advanced_model= ChatOpenAI(model="gpt-4o", temperature=0.2)
+        self.advanced_model = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
         self.parser = StrOutputParser()
 
 

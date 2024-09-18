@@ -1,9 +1,11 @@
 import json
 import copy
 from typing import List
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
+from src.discovery.interaction_agent.agent_classes import CompletedTask
 from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
 from src.log import logger
@@ -23,7 +25,7 @@ remove_file_extensions = [
 
 def parse_page_requests(driver, target: str, uri: str, filtered: bool = True) -> List[dict]:
     """
-    Parse the page requests from the given performance logs.
+    Parse the page requests from the driver's performance logs.
     """
     logs = driver.get_log("performance")
     ts = driver.execute_script("return window.performance.timing.navigationStart")
@@ -109,6 +111,37 @@ def filter_html(soup: BeautifulSoup) -> BeautifulSoup:
 
     return soup_cpy
 
+def format_steps(steps: List[CompletedTask]) -> str:
+    """
+    Format the given steps.
+    """
+    output = ""
+    for step in steps:
+        output += f"Step: {step.task}\n"
+        output += f"\tStatus: {step.status}\n"
+        output += f"\tResult: {step.result}\n"
+        output += f"\tTool history: {len(step.tool_history)}\n"
+        for tool_call in step.tool_history:
+            output += f"\t\tTool call: {tool_call[0]}\n"
+            output += f"\t\tInput: {tool_call[1]}\n"
+            output += f"\t\tOutput\n"
+            output += f"\t\t\tSuccess: {tool_call[2].success}\n"
+            output += f"\t\t\tMessage: {tool_call[2].message}\n"
+            # output += f"\t\t\tError: {tool_call[2].error if tool_call[2].error else 'No error'}\n"
+            # dont print page source, outgoing requests
+    return output
+
+def extract_uri(url:str) -> str:
+    """
+    Extract the URI from the given URL.
+    """
+    parsed = urlparse(url)
+    path_now = parsed.path
+    query_string = parsed.query
+    if query_string:
+        path_now = f"{path_now}?{query_string}"
+    return path_now
+
 # pages is list of Page objects
 def output_to_file(si: SiteInfo) -> None:
     """
@@ -146,7 +179,7 @@ def output_to_file(si: SiteInfo) -> None:
                     output += f"Input Field Name: {input_field["name"]}\n"
                     output += f"Input Field Type: {input_field["type"]}\n"
                 output += f"Tested: {"True" if interaction.tested else "False"}\n"
-                output += f"Behaviour: {interaction.behaviour}\n"
+                output += f"Test Report: {interaction.test_report}\n"
                 output += f"APIs Called: {interaction.apis_called}\n"
                 file.write(output)
         logger.info("Output written to output.txt")
