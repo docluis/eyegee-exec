@@ -17,7 +17,7 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
-from src.pretty_log import TestLog
+from src.pretty_log import ExecutorLog, HighHighLevelPlannerLog, HighLevelPlannerLog, HighLevelReplannerLog, ReporterLog
 from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
 from src.discovery.llm import llm_parse_requests_for_apis
 from src.discovery.interaction_agent.tool_context import ToolContext
@@ -47,6 +47,8 @@ from src.discovery.interaction_agent.agent_classes import (
     Act,
 )
 
+from rich.text import Text
+from rich import print
 class PlanExecute(TypedDict):
     uri: str
     interaction: str
@@ -88,26 +90,52 @@ class InteractionAgent:
         high_level_planner = high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
         high_level_replanner = high_level_replanner_prompt | self.cf.model.with_structured_output(Act)
 
-        def high_level_plan_step(state: PlanExecute):
-            plans = []
-            for approach in state["approaches"]:
-                plan = high_level_planner.invoke(
+        def high_high_level_planner_step(state: PlanExecute):
+            print(Text("High High Level Planner Step", style="bold green"))
+            high_high_level_planner_log = HighHighLevelPlannerLog()
+            with Live(refresh_per_second=10) as live:
+                high_high_level_planner_log.update_status("running")
+                live.update(high_high_level_planner_log.render())
+                approaches = high_high_level_planner.invoke(
                     {
                         "uri": state["uri"],
                         "interaction": state["interaction"],
                         "page_soup": state["page_soup"],
-                        "approach": approach,
+                        "limit": state["limit"],
                     }
                 )
-                plans.append(plan)
+                high_high_level_planner_log.update_status("done")
+                live.update(high_high_level_planner_log.render())
+            return {"approaches": approaches.approaches}
+
+        def high_level_plan_step(state: PlanExecute):
+            print(Text("High Level Planner Step", style="bold green"))
+            plans = []
+            with Live(refresh_per_second=10) as live:
+                high_level_planner_log = HighLevelPlannerLog(state["approaches"])
+                for i, approach in enumerate(state["approaches"]):
+                    high_level_planner_log.update_approach(i, "running")
+                    live.update(high_level_planner_log.render())
+                    plan = high_level_planner.invoke(
+                        {
+                            "uri": state["uri"],
+                            "interaction": state["interaction"],
+                            "page_soup": state["page_soup"],
+                            "approach": approach,
+                        }
+                    )
+                    plans.append(plan)
+                    high_level_planner_log.update_approach(i, "done")
+                    live.update(high_level_planner_log.render())
 
             return {"plans": plans}
 
         def execute_step(state: PlanExecute):
+            print(Text("Execute Step", style="bold green"))
             tests = []
             uri = state["uri"]
             plans = state["plans"]
-            test_log = TestLog(plans)
+            executor_log = ExecutorLog(plans)
             with Live(refresh_per_second=10) as live:
                 for i, plan in enumerate(state["plans"]):
                     context = ToolContext(cf=self.cf, initial_uri=uri)  # Create a new context for each test
@@ -116,20 +144,22 @@ class InteractionAgent:
                         self.cf.model, tools=tools, prompt=react_agent_prompt, output_parser=JSONAgentOutputParser()
                     )
                     solver_executor = AgentExecutor(agent=solver, tools=tools)
-                    # logger.info("")
-                    # logger.info(f"#### Next Approach: {plan.approach}")
-                    test_log.update_approach(i, "running")
-                    live.update(test_log.render_tasks())
+                    logger.debug("")
+                    logger.debug(f"#### Next Approach: {plan.approach}")
+                    executor_log.update_approach(i, "running")
+                    live.update(executor_log.render_tasks())
                     soup_before = BeautifulSoup(self.cf.driver.page_source, "html.parser")
                     soup_before = filter_html(soup_before)
-                    test = TestModel(approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan)
+                    test = TestModel(
+                        approach=plan.approach, steps=[], soup_before_str=soup_before.prettify(), plan=plan
+                    )
                     self.cf.driver.get(f"{self.cf.target}{uri}")
                     time.sleep(self.cf.selenium_rate)
                     plan_str = "\n".join(plan.plan)
                     for j, task in enumerate(plan.plan):
-                        test_log.update_task(i, j, "running")
-                        live.update(test_log.render_tasks())
-                        # logger.info(f"# Executing task: {task}")
+                        executor_log.update_task(i, j, "running")
+                        live.update(executor_log.render_tasks())
+                        logger.debug(f"# Executing task: {task}")
                         completed_task = CompletedTask(task=task)
                         try:
                             solved_state = solver_executor.invoke(
@@ -148,8 +178,8 @@ class InteractionAgent:
                             completed_task.result = str(e)
                         completed_task.tool_history = context.get_tool_history_reset()
                         test.steps.append(completed_task)
-                        test_log.update_task(i, j, "done")
-                        live.update(test_log.render_tasks())
+                        executor_log.update_task(i, j, "done")
+                        live.update(executor_log.render_tasks())
                     # getting page source:
                     originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
                     soup_after = filter_html(originial_soup)
@@ -160,8 +190,8 @@ class InteractionAgent:
                         self.cf, json.dumps(p_reqs, indent=4)
                     )  # maybe dont parse with LLM? let that do the reporter?
                     test.outgoing_requests_after = p_reqs_llm
-                    test_log.update_approach(i, "done")
-                    live.update(test_log.render_tasks())
+                    executor_log.update_approach(i, "done")
+                    live.update(executor_log.render_tasks())
 
                     tests.append(test)
             return {"tests": state["tests"] + tests, "plans": []}
@@ -170,89 +200,104 @@ class InteractionAgent:
             """
             Loops over all tests in current state and decides if a new plan is needed for each test.
             """
+            print(Text("High Level Replan Step", style="bold green"))
             new_plans = []
             tests = state["tests"]
             tests_to_check = [test for test in tests if not test.checked]
             tests_checked = [test for test in tests if test.checked]
-            logger.info(f"Replanner step")
-            for test in tests_to_check:
-                logger.info(f"Replanning for approach: {test.approach}")
-                logger.info(f"State keys: {state.keys()}")
-                uri = state["uri"]
-                interaction = state["interaction"]
-                page_source_diff = unified_diff(
-                    test.soup_before_str.splitlines(),
-                    test.soup_after_str.splitlines(),
-                    lineterm="",
-                )
-                page_source_diff = "\n".join(list(page_source_diff)).strip()
-                input = {
-                    "uri": uri,
-                    "interaction": interaction,
-                    "approach": test.approach,
-                    "previous_plan": "\n".join(test.plan.plan),
-                    "steps": format_steps(test.steps),
-                    "outgoing_requests": json.dumps(test.outgoing_requests_after, indent=4),
-                    "page_source_diff": page_source_diff,
-                }
+            logger.debug(f"Replanner step")
+            high_level_replanner_log = HighLevelReplannerLog(tests_to_check)
+            with Live(refresh_per_second=10) as live:
+                for i, test in enumerate(tests_to_check):
+                    high_level_replanner_log.update_test(i, "running", None)
+                    live.update(high_level_replanner_log.render())
+                    logger.debug(f"Replanning for approach: {test.approach}")
+                    uri = state["uri"]
+                    interaction = state["interaction"]
+                    page_source_diff = unified_diff(
+                        test.soup_before_str.splitlines(),
+                        test.soup_after_str.splitlines(),
+                        lineterm="",
+                    )
+                    page_source_diff = "\n".join(list(page_source_diff)).strip()
+                    input = {
+                        "uri": uri,
+                        "interaction": interaction,
+                        "approach": test.approach,
+                        "previous_plan": "\n".join(test.plan.plan),
+                        "steps": format_steps(test.steps),
+                        "outgoing_requests": json.dumps(test.outgoing_requests_after, indent=4),
+                        "page_source_diff": page_source_diff,
+                    }
 
-                descision = high_level_replanner.invoke(input=input)
-                if isinstance(descision.action, PlanModel):
-                    logger.info(f"Descision: New plan is needed")
-                    logger.info(f"New Plan: {descision.action.plan}")
-                    # remove the old test from state["tests"]
-                    test.checked = True
-                    test.in_report = False
-                    tests_checked.append(test)
-                    new_plans.append(descision.action)
-                elif isinstance(descision.action, Response):
-                    logger.info(f"Descision: No new plan is needed")
-                    logger.info(f"Response: {descision.action.text}")
-                    test.checked = True
-                    test.in_report = True
-                    tests_checked.append(test)
+                    descision = high_level_replanner.invoke(input=input)
+                    if isinstance(descision.action, PlanModel):
+                        logger.debug(f"Descision: New plan is needed")
+                        logger.debug(f"New Plan: {descision.action.plan}")
+                        high_level_replanner_log.update_test(i, "done", "New Plan is needed")
+                        live.update(high_level_replanner_log.render())
+                        # remove the old test from state["tests"]
+                        test.checked = True
+                        test.in_report = False
+                        tests_checked.append(test)
+                        new_plans.append(descision.action)
+                    elif isinstance(descision.action, Response):
+                        high_level_replanner_log.update_test(i, "done", "No new plan is needed")
+                        live.update(high_level_replanner_log.render())
+                        logger.debug(f"Descision: No new plan is needed")
+                        logger.debug(f"Response: {descision.action.text}")
+                        test.checked = True
+                        test.in_report = True
+                        tests_checked.append(test)
             return {"tests": tests_checked, "plans": new_plans}
 
         def report_step(state: PlanExecute):
-            logger.info(f"Report step")
-            interaction = json.dumps(state["interaction"], indent=4)
-            uri = state["uri"]
-            messages = [
-                (
-                    "system",
-                    system_reporter_prompt.format(interaction=interaction, uri=uri)
-                    .replace("{", "{{")
-                    .replace("}", "}}"),
-                )
-            ]
-            tests_to_report = [test for test in state["tests"] if test.in_report]
-            for test in tests_to_report:
-                steps = format_steps(test.steps)
-                page_source_diff = unified_diff(
-                    test.soup_before_str.splitlines(),
-                    test.soup_after_str.splitlines(),
-                    lineterm="",
-                )
-                page_source_diff = "\n".join(list(page_source_diff)).strip()
-                this_human_reporter_prompt = human_reporter_prompt.format(
-                    approach=test.approach,
-                    plan="\n".join(test.plan.plan),
-                    outgoing_requests=json.dumps(test.outgoing_requests_after, indent=4),
-                    page_source_diff=page_source_diff,
-                    steps=steps,
-                )
-                messages.append(("user", this_human_reporter_prompt.replace("{", "{{").replace("}", "}}")))
-            messages.append(("placeholder", "{messages}"))
+            print(Text("Report Step", style="bold green"))
+            reporter_log = ReporterLog()
+            with Live(refresh_per_second=10) as live:
+                reporter_log.update_status("running")
+                live.update(reporter_log.render())
+                logger.debug(f"Report step")
+                interaction = json.dumps(state["interaction"], indent=4)
+                uri = state["uri"]
+                messages = [
+                    (
+                        "system",
+                        system_reporter_prompt.format(interaction=interaction, uri=uri)
+                        .replace("{", "{{")
+                        .replace("}", "}}"),
+                    )
+                ]
+                tests_to_report = [test for test in state["tests"] if test.in_report]
+                for test in tests_to_report:
+                    steps = format_steps(test.steps)
+                    page_source_diff = unified_diff(
+                        test.soup_before_str.splitlines(),
+                        test.soup_after_str.splitlines(),
+                        lineterm="",
+                    )
+                    page_source_diff = "\n".join(list(page_source_diff)).strip()
+                    this_human_reporter_prompt = human_reporter_prompt.format(
+                        approach=test.approach,
+                        plan="\n".join(test.plan.plan),
+                        outgoing_requests=json.dumps(test.outgoing_requests_after, indent=4),
+                        page_source_diff=page_source_diff,
+                        steps=steps,
+                    )
+                    messages.append(("user", this_human_reporter_prompt.replace("{", "{{").replace("}", "}}")))
+                messages.append(("placeholder", "{messages}"))
 
-            reporter_prompt = ChatPromptTemplate.from_messages(messages)
-            reporter = reporter_prompt | self.cf.advanced_model | self.cf.parser
+                reporter_prompt = ChatPromptTemplate.from_messages(messages)
+                reporter = reporter_prompt | self.cf.advanced_model | self.cf.parser
 
-            report = reporter.invoke(input={})
-            logger.info(f"Report:\n{report}")
+                report = reporter.invoke(input={})
+                logger.debug(f"Report:\n{report}")
+                reporter_log.update_status("done")
+                live.update(reporter_log.render())
             return {"report": "final dummy report"}
 
         workflow = StateGraph(PlanExecute)
-        workflow.add_node("high_high_level_planner", high_high_level_planner)
+        workflow.add_node("high_high_level_planner", high_high_level_planner_step)
         workflow.add_node("high_level_planner", high_level_plan_step)
         workflow.add_node("executer", execute_step)
         workflow.add_node("high_level_replanner", high_level_replan_step)

@@ -7,11 +7,26 @@ from rich.table import Table
 from rich.text import Text
 from time import sleep
 
-from src.discovery.interaction_agent.agent_classes import PlanModel
+from src.discovery.interaction_agent.agent_classes import PlanModel, TestModel
 
-console = Console()
 
-class TestLog():
+def get_status_display(status):
+    return {
+        "running": (Spinner("dots", text="running"), "bold"),
+        # "running": (Text("running...", style="bold green"), "bold dim"),
+        "done": (Text("✓ completed", style="bold blue"), "bold dim"),
+        "waiting": (Text("waiting...", style="bold yellow"), "bold dim"),
+    }.get(status, (Text(status), "bold"))
+
+
+def get_initial_table():
+    table = Table.grid(padding=(0, 5))
+    table.add_column("Task", justify="left", overflow="crop")
+    table.add_column("Status", justify="left", overflow="crop", no_wrap=True, min_width=15)
+    return table
+
+
+class ExecutorLog:
     def __init__(self, plans: List[PlanModel]):
         self.data = self._init_data(plans)
 
@@ -25,29 +40,18 @@ class TestLog():
         return data
 
     def render_tasks(self) -> Table:
-        table = Table.grid(padding=(0, 5))
-        table.add_column("Task", justify="left", overflow="crop")
-        table.add_column("Status", justify="left", overflow="crop", no_wrap=True, min_width=15)
-
-        def get_status_display(status):
-            return {
-                "running": (Spinner("dots", text="running"), "bold"),
-                # "running": (Text("running...", style="bold green"), "bold dim"),
-                "done": (Text("✓ completed", style="bold blue"), "bold dim"),
-                "waiting": (Text("waiting...", style="bold yellow"), "bold dim")
-            }.get(status, (Text(status), "bold"))
-
+        table = get_initial_table()
         for test in self.data:
             status_display, style = get_status_display(test["status"])
             table.add_row(Text(f"Approach: {test['approach']}", style=style), status_display)
-            
+
             if test["status"] in ["running", "done"]:
                 for task in test["tasks"]:
                     status_display, style = get_status_display(task["status"])
                     table.add_row(Text(f"  • Task: {task['name']}", style=style), status_display)
 
         return table
-    
+
     def update_approach(self, approach_index: int, status: str):
         self.data[approach_index]["status"] = status
 
@@ -55,35 +59,76 @@ class TestLog():
         self.data[approach_index]["tasks"][task_index]["status"] = status
 
 
+class HighHighLevelPlannerLog:
+    def __init__(self):
+        self.status = "waiting"
 
-# test_plans = [
-#     PlanModel(approach="approach1", plan=["step1", "step2", "step3"]),
-#     PlanModel(approach="approach2", plan=["step4", "step5", "step6"]),
-#     PlanModel(approach="approach3", plan=["step7", "step8", "step9"]),
-# ]
+    def update_status(self, status: str):
+        self.status = status
 
-# test_log = TestLog(test_plans)
+    def render(self) -> Table:
+        table = get_initial_table()
+        status_display, style = get_status_display(self.status)
+        table.add_row(Text("Generating Approaches", style=style), status_display)
+        return table
 
 
+class HighLevelPlannerLog:
+    def __init__(self, approaches: List[str]):
+        self.data = self._init_data(approaches)
 
-# with Live(test_log.render_tasks(), refresh_per_second=10, console=console) as live:
-#     for i, test in enumerate(test_log.data):
-#         # Update the status of the current task
-#         test_log.update_approach(i, "running")
-#         live.update(test_log.render_tasks())
+    def _init_data(self, approaches: List[str]):
+        data = []
+        for approach in approaches:
+            data.append({"approach": approach, "status": "waiting"})
+        return data
 
-#         # Simulate a running task with a spinner for a few seconds
-#         for _ in range(10):
-#             sleep(0.1)
-        
-#         for j, task in enumerate(test_log.data[i]["tasks"]):
-#             sleep(0.1)
-#             test_log.update_task(i, j, "running")
-#             live.update(test_log.render_tasks())
-#             sleep(0.5)
-#             test_log.update_task(i, j, "done")
-#             live.update(test_log.render_tasks())
+    def update_approach(self, approach_index: int, status: str):
+        self.data[approach_index]["status"] = status
 
-#         # Mark the task as completed
-#         test_log.update_approach(i, "done")
-#         live.update(test_log.render_tasks())
+    def render(self) -> Table:
+        table = get_initial_table()
+        for approach in self.data:
+            status_display, style = get_status_display(approach["status"])
+            table.add_row(Text(f"Generating Plan for Approach: {approach['approach']}", style=style), status_display)
+        return table
+
+
+class HighLevelReplannerLog:
+    def __init__(self, tests_to_check: List[TestModel]):
+        self.data = self._init_data(tests_to_check)
+
+    def _init_data(self, tests_to_check: List[TestModel]):
+        data = []
+        for test in tests_to_check:
+            data.append({"approach": test.approach, "status": "waiting", "result": None})
+        return data
+
+    def update_test(self, test_index: int, status: str, result: str | None):
+        self.data[test_index]["status"] = status
+        self.data[test_index]["result"] = result
+
+    def render(self) -> Table:
+        table = get_initial_table()
+        for test in self.data:
+            status_display, style = get_status_display(test["status"])
+            table.add_row(Text(f"Approach: {test['approach']}", style=style), status_display)
+
+            if test["status"] in ["done"] and test["result"] is not None:
+                table.add_row(Text(f"  • Result: {test['result']}", style=style), "")
+
+        return table
+    
+
+class ReporterLog:
+    def __init__(self):
+        self.status = "waiting"
+
+    def update_status(self, status: str):
+        self.status = status
+
+    def render(self) -> Table:
+        table = get_initial_table()
+        status_display, style = get_status_display(self.status)
+        table.add_row(Text("Generating Report", style=style), status_display)
+        return table

@@ -22,7 +22,9 @@ Output:
 3. Test the search field with special characters.
 4. Test the search field with an empty search query.
 
-Limit your plan to max {limit} approaches. Cover as much functionality as possible with a minimum number of approaches.
+Cover as much functionality as possible with a minimum number of approaches.
+
+IMPORTANT: Limit it to max {limit} approaches.
 
 """
 

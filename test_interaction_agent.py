@@ -17,5 +17,5 @@ interaction = json.dumps(
 uri = "/register"
 agent = InteractionAgent(cf)
 
-res = agent.interact(uri, interaction)
+res = agent.interact(uri, interaction, limit="3")
 # print(res)
