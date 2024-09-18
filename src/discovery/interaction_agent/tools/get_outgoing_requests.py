@@ -14,7 +14,7 @@ from selenium.webdriver.common.keys import Keys
 from config import Config
 
 # from src.discovery.interaction_agent.context import Context
-from src.discovery.utils import parse_page_requests
+from src.discovery.utils import extract_uri, parse_page_requests
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
 from src.discovery.interaction_agent.tool_input_output_classes import GetOutgoingRequestsInput, GetOutgoingRequestsOutput
@@ -53,9 +53,10 @@ class GetOutgoingRequests(BaseTool):
                 success=True, message=f"Got outgoing requests with filtered: {filtered}.", outgoing_requests=p_reqs_str
             )
             self.context.tool_history.append((self.name, input, output))
+            self.context.add_observed_uri(extract_uri(self.cf.driver.current_url))
             return output
         except Exception as e:
-            logging.error("Error: Failed to get outgoing requests.")
+            logging.debug("Error: Failed to get outgoing requests.")
             output = GetOutgoingRequestsOutput(
                 success=False, message="Failed to get outgoing requests.", error=str(e)
             )

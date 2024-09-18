@@ -17,5 +17,13 @@ interaction = json.dumps(
 uri = "/register"
 agent = InteractionAgent(cf)
 
-res = agent.interact(uri, interaction, limit="3")
-# print(res)
+report, p_reqs, observed_uris = agent.interact(uri, interaction, limit="3")
+print("*"*100)
+print("Final Report:")
+print(report)
+print("*"*100)
+print("Page Requests:")
+print(p_reqs)
+print("*"*100)
+print("Observed URIs:")
+print(observed_uris)

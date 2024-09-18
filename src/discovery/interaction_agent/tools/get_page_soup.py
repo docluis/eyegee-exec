@@ -15,7 +15,7 @@ from selenium.webdriver.common.keys import Keys
 from config import Config
 
 # from src.discovery.interaction_agent.context import Context
-from src.discovery.utils import filter_html
+from src.discovery.utils import extract_uri, filter_html
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
 from src.discovery.interaction_agent.tool_input_output_classes import GetPageSoupInput, GetPageSoupOutput
@@ -57,9 +57,10 @@ class GetPageSoup(BaseTool):
                 page_source=res.prettify(),
             )
             self.context.tool_history.append((self.name, input, output))
+            self.context.add_observed_uri(extract_uri(self.cf.driver.current_url))
             return output
         except Exception as e:
-            logging.error("Error: Failed to fill in the text field.")
+            logging.debug("Error: Failed to fill in the text field.")
             output = GetPageSoupOutput(success=False, message="Failed to fill in the text field.", error=str(e), page_source=None)
             self.context.tool_history.append((self.name, input, output))
             return output

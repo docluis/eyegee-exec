@@ -80,13 +80,13 @@ const NodeInfoBox = ({ selectedNode, setSelectedNode }) => {
                 </li>
               ))}
             </ul> */}
-            <h4 className="pb-0 pt-4 font-bold">Behavior</h4>
+            <h4 className="pb-0 pt-4 font-bold">Test Report</h4>
             {/* make it scrollable, make height dynamic */}
             <Card className="w-full h-[500px] overflow-auto">
               {/* add line distance */}
               <CardBody className="pb-0 pt-4 px-8 w-full">
                 <ReactMarkdown components={md_components}>
-                  {selectedNode.behaviour}
+                  {selectedNode.test_report}
                 </ReactMarkdown>
               </CardBody>
             </Card>

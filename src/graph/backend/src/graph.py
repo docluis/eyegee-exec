@@ -41,7 +41,7 @@ class Graph:
                 "type": "interaction",
                 "description": interaction.description,
                 "input_fields": interaction.input_fields,
-                "behaviour": interaction.behaviour,
+                "test_report": interaction.test_report,
                 "tested": interaction.tested,
                 "apis_called": interaction.apis_called,
             }

@@ -4,7 +4,7 @@ import operator
 
 
 import time
-from typing import Dict, Literal, TypedDict, List, Annotated, Tuple, Union
+from typing import Any, Dict, Literal, TypedDict, List, Annotated, Tuple, Union
 from bs4 import BeautifulSoup
 from langgraph.graph import StateGraph, START, END
 from rich.console import Console
@@ -17,7 +17,13 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
-from src.pretty_log import ExecutorLog, HighHighLevelPlannerLog, HighLevelPlannerLog, HighLevelReplannerLog, ReporterLog
+from src.pretty_log import (
+    ExecutorLog,
+    HighHighLevelPlannerLog,
+    HighLevelPlannerLog,
+    HighLevelReplannerLog,
+    ReporterLog,
+)
 from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
 from src.discovery.llm import llm_parse_requests_for_apis
 from src.discovery.interaction_agent.tool_context import ToolContext
@@ -39,7 +45,6 @@ from src.discovery.interaction_agent.prompts import (
 )
 from src.discovery.interaction_agent.agent_classes import (
     HighHighLevelPlan,
-    # HighLevelPlan,
     PlanModel,
     Response,
     TestModel,
@@ -49,6 +54,8 @@ from src.discovery.interaction_agent.agent_classes import (
 
 from rich.text import Text
 from rich import print
+
+
 class PlanExecute(TypedDict):
     uri: str
     interaction: str
@@ -58,6 +65,8 @@ class PlanExecute(TypedDict):
     plans: List[PlanModel]
     tests: Annotated[List[TestModel], operator.add]
     report: str
+    all_p_reqs_parsed: Annotated[List[Dict[str, Any]], operator.add]
+    observed_uris: Annotated[List[str], operator.add]
 
 
 class InteractionAgent:
@@ -86,7 +95,6 @@ class InteractionAgent:
         high_high_level_planner = high_high_level_planner_prompt | self.cf.model.with_structured_output(
             HighHighLevelPlan
         )
-        # TODO: add tool info to the prompt?
         high_level_planner = high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
         high_level_replanner = high_level_replanner_prompt | self.cf.model.with_structured_output(Act)
 
@@ -133,6 +141,8 @@ class InteractionAgent:
         def execute_step(state: PlanExecute):
             print(Text("Execute Step", style="bold green"))
             tests = []
+            all_p_reqs_parsed = []
+            observed_uris = []
             uri = state["uri"]
             plans = state["plans"]
             executor_log = ExecutorLog(plans)
@@ -177,6 +187,7 @@ class InteractionAgent:
                             completed_task.status = "error"
                             completed_task.result = str(e)
                         completed_task.tool_history = context.get_tool_history_reset()
+                        observed_uris = context.get_observed_uris_reset()
                         test.steps.append(completed_task)
                         executor_log.update_task(i, j, "done")
                         live.update(executor_log.render_tasks())
@@ -186,15 +197,19 @@ class InteractionAgent:
                     test.soup_after_str = soup_after.prettify()
                     # parsing page requests and filtering them with LLM
                     p_reqs = parse_page_requests(driver=self.cf.driver, target=self.cf.target, uri=uri, filtered=True)
-                    p_reqs_llm = llm_parse_requests_for_apis(
-                        self.cf, json.dumps(p_reqs, indent=4)
-                    )  # maybe dont parse with LLM? let that do the reporter?
+                    p_reqs_llm = llm_parse_requests_for_apis(self.cf, json.dumps(p_reqs, indent=4))
                     test.outgoing_requests_after = p_reqs_llm
                     executor_log.update_approach(i, "done")
                     live.update(executor_log.render_tasks())
 
                     tests.append(test)
-            return {"tests": state["tests"] + tests, "plans": []}
+                    all_p_reqs_parsed.extend(p_reqs_llm)
+            return {
+                "tests": state["tests"] + tests,
+                "plans": [],
+                "all_p_reqs_parsed": state["all_p_reqs_parsed"] + all_p_reqs_parsed,
+                "observed_uris": state["observed_uris"] + observed_uris,
+            }
 
         def high_level_replan_step(state: PlanExecute):
             """
@@ -236,7 +251,6 @@ class InteractionAgent:
                         logger.debug(f"New Plan: {descision.action.plan}")
                         high_level_replanner_log.update_test(i, "done", "New Plan is needed")
                         live.update(high_level_replanner_log.render())
-                        # remove the old test from state["tests"]
                         test.checked = True
                         test.in_report = False
                         tests_checked.append(test)
@@ -294,7 +308,7 @@ class InteractionAgent:
                 logger.debug(f"Report:\n{report}")
                 reporter_log.update_status("done")
                 live.update(reporter_log.render())
-            return {"report": "final dummy report"}
+            return {"report": report}
 
         workflow = StateGraph(PlanExecute)
         workflow.add_node("high_high_level_planner", high_high_level_planner_step)
@@ -313,13 +327,15 @@ class InteractionAgent:
 
         return app
 
-    def interact(self, uri: str, interaction: str, limit: str = "3") -> str:
+    def interact(self, uri: str, interaction: str, limit: str = "3") -> Tuple[str, List[Dict[str, Any]], List[str]]:
         # initial steps: navigate and get soup
         self.cf.driver.get(f"{self.cf.target}{uri}")
         time.sleep(self.cf.selenium_rate)
         originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
         soup = filter_html(originial_soup).prettify()
 
-        result = self.app.invoke(input={"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit})
+        final_state = self.app.invoke(
+            input={"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit}
+        )
 
-        return result["report"]
+        return final_state["report"], final_state["all_p_reqs_parsed"], final_state["observed_uris"]

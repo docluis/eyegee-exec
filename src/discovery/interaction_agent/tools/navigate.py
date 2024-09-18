@@ -14,6 +14,7 @@ from selenium.webdriver.common.keys import Keys
 from config import Config
 
 # from src.discovery.interaction_agent.context import Context
+from src.discovery.utils import extract_uri
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
 from src.discovery.interaction_agent.tool_input_output_classes import NavigateInput, NavigateOutput
@@ -43,12 +44,13 @@ class Navigate(BaseTool):
             self.cf.driver.get(url)
             time.sleep(self.cf.selenium_rate)
 
-            uri_now = self.cf.driver.current_url
-            output = NavigateOutput(success=True, message=f"Navigated to the URL {url}. Actual URI now: {uri_now}")
+            url_now = self.cf.driver.current_url
+            output = NavigateOutput(success=True, message=f"Navigated to the URL {url}. Actual URL now: {url_now}")
             self.context.tool_history.append((self.name, input, output))
+            self.context.add_observed_uri(extract_uri(self.cf.driver.current_url))
             return output
         except Exception as e:
-            logging.error("Error: Failed to navigate to the URL.")
+            logging.debug("Error: Failed to navigate to the URL.")
             output = NavigateOutput(success=False, message="Failed to navigate to the URL.", error=str(e))
             self.context.tool_history.append((self.name, input, output))
             return output

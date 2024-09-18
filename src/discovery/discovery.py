@@ -5,7 +5,9 @@ from bs4 import BeautifulSoup
 
 from config import Config
 from src.discovery.schedule import Schedule
-from src.discovery.interactionagent import InteractionAgent
+
+# from src.discovery.interactionagent import InteractionAgent
+from src.discovery.interaction_agent.agent import InteractionAgent
 from src.discovery.llm import (
     llm_parse_requests_for_apis,
     llm_rank_interactions,
@@ -94,8 +96,11 @@ def discover(cf: Config) -> SiteInfo:
             logger.info(f"Discovering interaction: {interaction_name}")
 
             uri = si.get_uris_with_interaction(interaction_name)[0]
-            behaviour, all_p_reqs, all_paths, new_soup = interaction_agent.interact(
-                uri=uri, interaction=json.dumps(interaction.to_dict())
+            # behaviour, all_p_reqs, all_paths, new_soup = interaction_agent.interact(
+            #     uri=uri, interaction=json.dumps(interaction.to_dict())
+            # )
+            test_report, all_p_reqs, all_paths = interaction_agent.interact(
+                uri=uri, interaction=json.dumps(interaction.to_dict()), limit="3"  # TODO: adjust limit
             )
 
             apis_called_interaction = (
@@ -104,19 +109,20 @@ def discover(cf: Config) -> SiteInfo:
                 else []
             )
 
-            interaction.behaviour = behaviour
+            interaction.test_report = test_report
             interaction.apis_called = apis_called_interaction
             interaction.tested = True
 
             logger.info(f"All paths: {all_paths}")
             schuedule.add_uris_to_todo(all_paths)  # Add the new paths to the schedule
 
-            if new_soup:  # Parse interactions if the page has changed
-                interactions = llm_interactionparser.parse_interactions(soup)
-                interaction_names = si.add_interactions(interactions)
+            # TODO: handle this inside the agent (discover new interactions in same page with new soup)
+            # if new_soup:  # Parse interactions if the page has changed
+            #     interactions = llm_interactionparser.parse_interactions(soup)
+            #     interaction_names = si.add_interactions(interactions)
 
-                for interaction_name in interaction_names:
-                    logger.info(f"Found Interaction: {interaction_name}")
+            #     for interaction_name in interaction_names:
+            #         logger.info(f"Found Interaction: {interaction_name}")
 
             time.sleep(cf.selenium_rate)
 

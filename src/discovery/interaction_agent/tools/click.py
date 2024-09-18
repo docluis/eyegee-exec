@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 
 from config import Config
-from src.discovery.utils import filter_html
+from src.discovery.utils import extract_uri, filter_html
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
 from src.discovery.interaction_agent.tool_input_output_classes import ClickInput, ClickOutput
@@ -63,10 +63,11 @@ class Click(BaseTool):
 
             output = ClickOutput(success=True, message=message, page_diff=page_diff)
             self.context.tool_history.append((self.name, input, output))
+            self.context.add_observed_uri(extract_uri(self.cf.driver.current_url))
             return output
         except Exception as e:
             # logging.error(str(e))
-            logging.error("Error: Failed to click element.")
+            logging.debug("Error: Failed to click element.")
             output = ClickOutput(success=False, message="Failed to click element.", error=str(e))
             self.context.tool_history.append((self.name, input, output))
             return output

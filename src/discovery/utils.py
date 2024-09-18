@@ -1,6 +1,7 @@
 import json
 import copy
 from typing import List
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
@@ -130,6 +131,16 @@ def format_steps(steps: List[CompletedTask]) -> str:
             # dont print page source, outgoing requests
     return output
 
+def extract_uri(url:str) -> str:
+    """
+    Extract the URI from the given URL.
+    """
+    parsed = urlparse(url)
+    path_now = parsed.path
+    query_string = parsed.query
+    if query_string:
+        path_now = f"{path_now}?{query_string}"
+    return path_now
 
 # pages is list of Page objects
 def output_to_file(si: SiteInfo) -> None:
@@ -168,7 +179,7 @@ def output_to_file(si: SiteInfo) -> None:
                     output += f"Input Field Name: {input_field["name"]}\n"
                     output += f"Input Field Type: {input_field["type"]}\n"
                 output += f"Tested: {"True" if interaction.tested else "False"}\n"
-                output += f"Behaviour: {interaction.behaviour}\n"
+                output += f"Test Report: {interaction.test_report}\n"
                 output += f"APIs Called: {interaction.apis_called}\n"
                 file.write(output)
         logger.info("Output written to output.txt")
