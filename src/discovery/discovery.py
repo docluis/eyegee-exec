@@ -142,17 +142,18 @@ def discover(cf: Config) -> SiteInfo:
             # behaviour, all_p_reqs, all_paths, new_soup = interaction_agent.interact(
             #     uri=uri, interaction=json.dumps(interaction.to_dict())
             # )
-            test_report, all_p_reqs, all_paths = interaction_agent.interact(
+            test_report, all_p_reqs_parsed, all_paths = interaction_agent.interact(
                 uri=uri,
                 interaction=json.dumps(interaction.to_dict()),
                 limit=str(interaction_limit),
             )
 
             apis_called_interaction = (
-                si.add_apis(llm_parse_requests_for_apis(cf, json.dumps(all_p_reqs, indent=4)))
-                if len(all_p_reqs) > 0
+                si.add_apis(all_p_reqs_parsed)
+                if len(all_p_reqs_parsed) > 0
                 else []
             )
+            si.add_apis(all_p_reqs_parsed)
 
             interaction.test_report = test_report
             interaction.apis_called = apis_called_interaction

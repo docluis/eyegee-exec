@@ -1,6 +1,7 @@
 from typing import List, Tuple, Any, Dict, Union
 from langchain_core.pydantic_v1 import BaseModel, Field
 
+from src.discovery.llm_classes import ApiModel
 from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
 
 class HighHighLevelPlan(BaseModel):
@@ -42,7 +43,7 @@ class TestModel(BaseModel):
     soup_before_str: str = Field(description="The soup before the test.")
     soup_after_str: str = Field(default=None, description="The soup after the test.")
     # outgoing_requests_before: List[Dict] = Field(description="The outgoing requests before the test.")
-    outgoing_requests_after: str = Field(default=None, description="The outgoing requests after the test. (JSON)")
+    outgoing_requests_after: List[ApiModel] = Field(default=None, description="The outgoing requests after the test.")
     # TODO: add a flag so the replanner does not need to check this test after checked once and replan is not needed
     checked: bool = Field(default=False, description="Whether the test has been checked for this approach.")
     in_report: bool = Field(default=False, description="Whether the test is in the final report.")

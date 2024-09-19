@@ -13,9 +13,9 @@ class Parameter:
 
 
 class Api:
-    def __init__(self, method: str, route: str) -> None:
+    def __init__(self, method: str, path: str) -> None:
         self.method = method
-        self.route = route
+        self.path = path
 
         self.params = []
 

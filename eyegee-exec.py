@@ -29,6 +29,7 @@ def start_servers():
     # Start the backend in the main thread
     backend_app = init_app()
     backend_app.run(port=9778, debug=False, use_reloader=False)
+    # backend_app.run(port=9778, debug=True)
 
     # Wait for the frontend thread to completed
     frontend_thread.join()

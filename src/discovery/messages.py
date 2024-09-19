@@ -59,32 +59,92 @@ Example Output:
 
 api_system_message = """
 Your task is to parse out the interesting APIs calls from the given performance logs. Omit any calls that are not relevant to the website's functionality and boilerplate code.
-Return the APIs in raw JSON format, where each API call has the following attributes:
+Return the APIs in a List of ApiModel, where each API call has the following attributes:
 
 url: The URL of the API call.
 domain: The domain of the API call.
 path: The path of the API call.
 query_string: The query string of the API call.
+url_path_params: The URL path parameters of the API call.
 method: The HTTP method used in the API call, such as "GET" or "POST".
 headers: A dictionary of headers sent with the API call.
 postData: The data sent with the API call, if any.
 
-Example Output:
-[
-    {
-        "url": "https://api.example.com/data?query=example",
-        "domain": "api.example.com",
-        "path": "/data",
-        "query_string": "query=example",
-        "method": "GET",
-        "headers": {
+## Examples:
+
+# Example 1:
+Input:
+A simple GET request to a URL with a query string: https://api.example.com/data?query=example
+
+Output:
+[   
+    ApiModel(
+        url="https://api.example.com/data?query=example",
+        domain: "api.example.com",
+        path: "/data",
+        query_string: "query=example",
+        url_path_params: {},
+        method: "GET",
+        headers: {
             "Content-Type": "application/json",
         },
-        "postData": null
+        postData: null
     },
 ]
 
-Return an empty list [] if no APIs calls are found. Do not include markdown backticks in your output.
+# Example 2:
+Input:
+GET requests to a URL with URL path parameters: https://api.example.com/data/123, https://api.example.com/data/456
+
+Output:
+[
+    ApiModel(
+        url="https://api.example.com/data/123",
+        domain: "api.example.com",
+        path: "/data/<id>", # The path is the same for both requests
+        query_string: "",
+        url_path_params: {"id": "123"},
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        postData: null
+    ),
+    ApiModel(
+        url="https://api.example.com/data/456",
+        domain: "api.example.com",
+        path: "/data/<id>",
+        query_string: "",
+        url_path_params: {"id": "456"},
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        postData: null
+    ),
+]
+
+# Example 3:
+Input:
+POST request to a URL with a JSON body: https://api.example.com/data
+
+Output:
+[
+    ApiModel(
+        url="https://api.example.com/data",
+        domain: "api.example.com",
+        path: "/data",
+        query_string: "",
+        url_path_params: {},
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        postData: {"city": "London"}
+    ),
+]
+
+Return an empty list [] if no APIs calls are found.
 """
 
 

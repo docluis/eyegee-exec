@@ -1,3 +1,4 @@
+import json
 import pickle
 from src.discovery.siteinfo import SiteInfo
 
@@ -55,12 +56,12 @@ class Graph:
                 param_json = {
                     "name": param.name,
                     "type": param.param_type,
-                    "observed_values": param.observed_values,
+                    "observed_values": list(param.observed_values),
                 }
                 params_json.append(param_json)
             node = {
-                "id": f"{api.method} {api.route}",
-                "label": f"{api.method} {api.route}",
+                "id": f"{api.method} {api.path}",
+                "label": f"{api.method} {api.path}",
                 "type": "api",
                 "params": params_json,
             }

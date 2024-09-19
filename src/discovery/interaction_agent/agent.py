@@ -17,6 +17,7 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
+from src.discovery.llm_classes import ApiModel
 from src.pretty_log import (
     ExecutorLog,
     HighHighLevelPlannerLog,
@@ -34,7 +35,7 @@ from src.discovery.interaction_agent.tools.get_page_soup import GetPageSoup
 from src.discovery.interaction_agent.tools.get_outgoing_requests import GetOutgoingRequests
 from src.discovery.interaction_agent.tools.select_option import SelectOption
 from src.log import logger
-from src.discovery.utils import filter_html, format_steps, parse_page_requests
+from src.discovery.utils import api_models_to_str, filter_html, format_steps, parse_page_requests
 from src.discovery.interaction_agent.prompts import (
     high_high_level_planner_prompt,
     high_level_planner_prompt,
@@ -65,7 +66,7 @@ class PlanExecute(TypedDict):
     plans: List[PlanModel]
     tests: Annotated[List[TestModel], operator.add]
     report: str
-    all_p_reqs_parsed: Annotated[List[Dict[str, Any]], operator.add]
+    all_p_reqs_parsed: Annotated[List[ApiModel], operator.add]
     observed_uris: Annotated[List[str], operator.add]
 
 
@@ -241,7 +242,7 @@ class InteractionAgent:
                         "approach": test.approach,
                         "previous_plan": "\n".join(test.plan.plan),
                         "steps": format_steps(test.steps),
-                        "outgoing_requests": json.dumps(test.outgoing_requests_after, indent=4),
+                        "outgoing_requests": api_models_to_str(test.outgoing_requests_after),
                         "page_source_diff": page_source_diff,
                     }
 
@@ -294,7 +295,7 @@ class InteractionAgent:
                     this_human_reporter_prompt = human_reporter_prompt.format(
                         approach=test.approach,
                         plan="\n".join(test.plan.plan),
-                        outgoing_requests=json.dumps(test.outgoing_requests_after, indent=4),
+                        outgoing_requests=api_models_to_str(test.outgoing_requests_after),
                         page_source_diff=page_source_diff,
                         steps=steps,
                     )
@@ -327,7 +328,7 @@ class InteractionAgent:
 
         return app
 
-    def interact(self, uri: str, interaction: str, limit: str = "3") -> Tuple[str, List[Dict[str, Any]], List[str]]:
+    def interact(self, uri: str, interaction: str, limit: str = "3") -> Tuple[str, List[ApiModel], List[str]]:
         # initial steps: navigate and get soup
         self.cf.driver.get(f"{self.cf.target}{uri}")
         time.sleep(self.cf.selenium_rate)

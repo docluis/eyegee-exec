@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
+from src.discovery.llm_classes import ApiModel
 from src.discovery.interaction_agent.agent_classes import CompletedTask
 from src.discovery.siteinfo import SiteInfo
 from src.discovery.page import Page
@@ -141,6 +142,33 @@ def extract_uri(url:str) -> str:
     if query_string:
         path_now = f"{path_now}?{query_string}"
     return path_now
+
+def api_models_to_str(apis: List[ApiModel]) -> str:
+    """
+    Convert the given API models to a string.
+    """
+    # url: str = Field(description="The URL of the API call")
+    # domain: str = Field(description="The domain of the API call")
+    # path: str = Field(description="The path of the API call")
+    # query_string: Optional[str] = Field(description="The query string of the API call")
+    # url_path_params: Optional[Dict[str, str]] = Field(description="The URL path parameters of the API call")
+    # method: str = Field(description="The HTTP method used in the API call, such as 'GET' or 'POST'")
+    # headers: Dict[str, str] = Field(description="The headers sent with the API call")
+    # postData: Optional[Dict[str, str]] = Field(description="The data sent with the API call, key-value pairs")
+    output = ""
+    for api in apis:
+        output += f"API: {api.method} {api.url}\n"
+        output += f"Domain: {api.domain}\n"
+        output += f"Path: {api.path}\n"
+        if api.query_string :
+            output += f"Query String: {api.query_string}\n"
+        if api.url_path_params :
+            output += f"URL Path Params: {api.url_path_params}\n"
+        output += f"Headers: {api.headers}\n"
+        if api.postData :
+            output += f"Post Data: {api.postData}\n"
+        output += "\n"
+    return output
 
 # pages is list of Page objects
 def output_to_file(si: SiteInfo) -> None:
