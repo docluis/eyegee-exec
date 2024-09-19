@@ -4,10 +4,9 @@ import operator
 
 
 import time
-from typing import Any, Dict, Literal, TypedDict, List, Annotated, Tuple, Union
+from typing import Literal, TypedDict, List, Annotated, Tuple
 from bs4 import BeautifulSoup
 from langgraph.graph import StateGraph, START, END
-from rich.console import Console
 from rich.live import Live
 
 # from pydantic import BaseModel
@@ -17,6 +16,7 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
+from src.discovery.llm.api_parser import LLM_ApiParser
 from src.discovery.llm.model_classes import ApiModel
 from src.pretty_log import (
     ExecutorLog,
@@ -26,7 +26,7 @@ from src.pretty_log import (
     ReporterLog,
 )
 from src.discovery.interaction_agent.classes import AnyInput, AnyOutput
-from src.discovery.llm.llm import llm_parse_requests_for_apis
+
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.discovery.interaction_agent.tools.click import Click
 from src.discovery.interaction_agent.tools.fill_text_field import FillTextField
@@ -37,7 +37,7 @@ from src.discovery.interaction_agent.tools.fill_date_field import FillDateField
 from src.discovery.interaction_agent.tools.get_outgoing_requests import GetOutgoingRequests
 from src.discovery.interaction_agent.tools.select_option import SelectOption
 from src.log import logger
-from src.discovery.utils import api_models_to_str, filter_html, format_steps, parse_page_requests
+from src.discovery.utils import api_models_to_str, filter_html, format_steps, parse_apis
 from src.discovery.interaction_agent.prompts import (
     high_high_level_planner_prompt,
     high_level_planner_prompt,
@@ -73,8 +73,9 @@ class PlanExecute(TypedDict):
 
 
 class InteractionAgent:
-    def __init__(self, cf: Config) -> None:
+    def __init__(self, cf: Config, llm_page_request_parser: LLM_ApiParser) -> None:
         self.cf = cf
+        self.llm_page_request_parser = llm_page_request_parser
         # self.tools = self._init_tools()
         self.app = self._init_app()
 
@@ -201,8 +202,9 @@ class InteractionAgent:
                     soup_after = filter_html(originial_soup)
                     test.soup_after_str = soup_after.prettify()
                     # parsing page requests and filtering them with LLM
-                    p_reqs = parse_page_requests(driver=self.cf.driver, target=self.cf.target, uri=uri, filtered=True)
-                    p_reqs_llm = llm_parse_requests_for_apis(self.cf, json.dumps(p_reqs, indent=4))
+                    p_reqs = parse_apis(driver=self.cf.driver, target=self.cf.target, uri=uri, filtered=True)
+                    # p_reqs_llm = llm_parse_requests_for_apis(self.cf, json.dumps(p_reqs, indent=4))
+                    p_reqs_llm = self.llm_page_request_parser.parse_apis(json.dumps(p_reqs, indent=4))
                     test.outgoing_requests_after = p_reqs_llm
                     executor_log.update_approach(i, "done")
                     live.update(executor_log.render_tasks())

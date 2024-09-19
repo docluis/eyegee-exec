@@ -14,7 +14,7 @@ from selenium.webdriver.common.keys import Keys
 from config import Config
 
 # from src.discovery.interaction_agent.context import Context
-from src.discovery.utils import extract_uri, parse_page_requests
+from src.discovery.utils import extract_uri, parse_apis
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
 from src.discovery.interaction_agent.classes import GetOutgoingRequestsInput, GetOutgoingRequestsOutput
@@ -42,7 +42,7 @@ class GetOutgoingRequests(BaseTool):
         input = GetOutgoingRequestsInput(filtered=filtered)
         try:
             logger.debug(f"Getting outgoing requests with filtered: {filtered}")
-            p_reqs = parse_page_requests(
+            p_reqs = parse_apis(
                 driver=self.cf.driver,
                 target=self.cf.target,
                 uri=self.context.initial_uri,

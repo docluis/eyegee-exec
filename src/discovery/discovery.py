@@ -8,21 +8,18 @@ from src.pretty_log import DiscoveryLog, RankerLog
 from src.discovery.classes.schedule import Schedule
 
 from src.discovery.interaction_agent.agent import InteractionAgent
-from src.discovery.llm.llm import (
-    llm_parse_requests_for_apis,
-    llm_rank_interactions,
-)
+from src.discovery.llm.ranker import llm_rank_interactions
 from src.discovery.classes.siteinfo import SiteInfo
 from src.discovery.classes.page import Page
 from src.discovery.utils import (
     filter_html,
-    parse_page_requests,
+    parse_apis,
     parse_links,
 )
 from src.log import logger
 from src.discovery.llm.summarizer import LLM_Summarizer
 from src.discovery.llm.interaction_parser import LLM_InteractionParser
-
+from src.discovery.llm.api_parser import LLM_ApiParser
 from rich import print
 from rich.text import Text
 from rich.live import Live
@@ -37,9 +34,11 @@ def discover(cf: Config) -> SiteInfo:
     si = SiteInfo(cf.target)
     schuedule = Schedule(cf.target, cf.initial_path)
 
-    interaction_agent = InteractionAgent(cf)
     llm_summarizer = LLM_Summarizer(cf)
     llm_interactionparser = LLM_InteractionParser(cf)
+    llm_page_request_parser = LLM_ApiParser(cf)
+
+    interaction_agent = InteractionAgent(cf, llm_page_request_parser)
 
     rerank_required = True
 
@@ -70,10 +69,10 @@ def discover(cf: Config) -> SiteInfo:
                 # Parse the page requests
                 discovery_log.update_status("Discovering APIs", "running")
                 live.update(discovery_log.render())
-                p_reqs = parse_page_requests(driver=cf.driver, target=cf.target, uri=uri, filtered=True)
+                p_reqs = parse_apis(driver=cf.driver, target=cf.target, uri=uri, filtered=True)
 
                 apis_called_passive = (
-                    si.add_apis(llm_parse_requests_for_apis(cf, json.dumps(p_reqs, indent=4)))
+                    si.add_apis(llm_page_request_parser.parse_apis(json.dumps(p_reqs, indent=4)))
                     if len(p_reqs) > 0
                     else []
                 )
@@ -148,11 +147,7 @@ def discover(cf: Config) -> SiteInfo:
                 limit=str(interaction_limit),
             )
 
-            apis_called_interaction = (
-                si.add_apis(all_p_reqs_parsed)
-                if len(all_p_reqs_parsed) > 0
-                else []
-            )
+            apis_called_interaction = si.add_apis(all_p_reqs_parsed) if len(all_p_reqs_parsed) > 0 else []
             si.add_apis(all_p_reqs_parsed)
 
             interaction.test_report = test_report

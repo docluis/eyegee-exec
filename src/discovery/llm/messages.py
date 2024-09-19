@@ -58,7 +58,10 @@ Example Output:
 
 
 api_system_message = """
-Your task is to parse out the interesting APIs calls from the given performance logs. Omit any calls that are not relevant to the website's functionality and boilerplate code.
+Your task is to parse out the interesting APIs calls from the given performance logs.
+
+Omit any calls that are not relevant to the website's functionality and boilerplate code, inluing calls such as tracking scripts, analytics, or other third-party services, manifest files, or calls that are not API calls.
+
 Return the APIs in a List of ApiModel, where each API call has the following attributes:
 
 url: The URL of the API call.
@@ -145,6 +148,8 @@ Output:
 ]
 
 Return an empty list [] if no APIs calls are found.
+
+Make sure to stay consistent with the the naming of URL path parameters.
 """
 
 

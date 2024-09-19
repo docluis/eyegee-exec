@@ -24,7 +24,7 @@ remove_file_extensions = [
     ".woff2",
 ]
 
-def parse_page_requests(driver, target: str, uri: str, filtered: bool = True) -> List[dict]:
+def parse_apis(driver, target: str, uri: str, filtered: bool = True) -> List[dict]:
     """
     Parse the page requests from the driver's performance logs.
     """
