@@ -15,6 +15,19 @@ class FillTextFieldOutput(BaseModel):
     error: Optional[str] = Field(default=None, description="The error message if the operation failed.")
 
 
+class FillDateFieldInput(BaseModel):
+    xpath_identifier: str = Field(description="The xpath of the date field.")
+    year_value: str = Field(description="The value of the year to be filled in the date field.")
+    month_value: str = Field(description="The value of the month to be filled in the date field.")
+    day_value: str = Field(description="The value of the day to be filled in the date field.")
+
+
+class FillDateFieldOutput(BaseModel):
+    success: bool = Field(description="Whether the date field was filled successfully.")
+    message: str = Field(description="The message indicating the result of the operation.")
+    error: Optional[str] = Field(default=None, description="The error message if the operation failed.")
+
+
 class ClickInput(BaseModel):
     xpath_identifier: str = Field(description="The xpath of the element to be clicked.")
     using_javascript: bool = Field(default=False, description="Whether to use JavaScript to click.")
@@ -35,6 +48,17 @@ class GetPageSoupOutput(BaseModel):
     success: bool = Field(description="Whether the page source was retrieved successfully.")
     message: str = Field(description="The message indicating the result of the operation.")
     page_source: Optional[str] = Field(description="The page source.")
+    error: Optional[str] = Field(default=None, description="The error message if the operation failed.")
+
+
+class GetElementInput(BaseModel):
+    xpath_identifier: str = Field(description="The xpath of the element to be clicked.")
+
+
+class GetElementOutput(BaseModel):
+    success: bool = Field(description="Whether the element was retrieved successfully.")
+    message: str = Field(description="The message indicating the result of the operation.")
+    element: Optional[str] = Field(description="The element.")
     error: Optional[str] = Field(default=None, description="The error message if the operation failed.")
 
 

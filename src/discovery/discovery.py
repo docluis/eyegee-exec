@@ -63,7 +63,7 @@ def discover(cf: Config) -> SiteInfo:
                 if si.check_if_visited(soup):
                     discovery_log.update_status("Discovering APIs", "skipped")
                     discovery_log.update_status("Discovering Interactions", "skipped")
-                    discovery_log.update_status("Creating Summary", "skipped")
+                    discovery_log.update_status("Summarizing Page", "skipped")
                     live.update(discovery_log.render())
                     continue
 

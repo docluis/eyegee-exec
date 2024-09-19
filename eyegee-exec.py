@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import os
 import threading
 import time
 from config import Config
@@ -68,4 +69,8 @@ if args.discover:
     cf.driver.quit()
 
 if args.graph:
+    # check if siteinfo.pkl exists
+    if not os.path.exists("siteinfo.pkl"):
+        print(Text("siteinfo.pkl file not found, please run discovery first", style="bold red"))
+        exit(1)
     start_servers()

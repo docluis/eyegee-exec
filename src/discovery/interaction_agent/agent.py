@@ -32,6 +32,8 @@ from src.discovery.interaction_agent.tools.click import Click
 from src.discovery.interaction_agent.tools.fill_text_field import FillTextField
 from src.discovery.interaction_agent.tools.navigate import Navigate
 from src.discovery.interaction_agent.tools.get_page_soup import GetPageSoup
+from src.discovery.interaction_agent.tools.get_element import GetElement
+from src.discovery.interaction_agent.tools.fill_date_field import FillDateField
 from src.discovery.interaction_agent.tools.get_outgoing_requests import GetOutgoingRequests
 from src.discovery.interaction_agent.tools.select_option import SelectOption
 from src.log import logger
@@ -81,7 +83,9 @@ class InteractionAgent:
             Navigate(cf=self.cf, context=context),
             Click(cf=self.cf, context=context),
             FillTextField(cf=self.cf, context=context),
+            FillDateField(cf=self.cf, context=context),
             GetPageSoup(cf=self.cf, context=context),
+            GetElement(cf=self.cf, context=context),
             # GetOutgoingRequests(cf=self.cf, context=context),
             SelectOption(cf=self.cf, context=context),
         ]
