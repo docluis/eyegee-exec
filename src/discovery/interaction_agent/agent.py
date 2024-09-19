@@ -17,7 +17,7 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain.agents.output_parsers import JSONAgentOutputParser
 
 from config import Config
-from src.discovery.llm_classes import ApiModel
+from src.discovery.llm.model_classes import ApiModel
 from src.pretty_log import (
     ExecutorLog,
     HighHighLevelPlannerLog,
@@ -25,8 +25,8 @@ from src.pretty_log import (
     HighLevelReplannerLog,
     ReporterLog,
 )
-from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
-from src.discovery.llm import llm_parse_requests_for_apis
+from src.discovery.interaction_agent.classes import AnyInput, AnyOutput
+from src.discovery.llm.llm import llm_parse_requests_for_apis
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.discovery.interaction_agent.tools.click import Click
 from src.discovery.interaction_agent.tools.fill_text_field import FillTextField
@@ -44,7 +44,7 @@ from src.discovery.interaction_agent.prompts import (
     system_reporter_prompt,
     human_reporter_prompt,
 )
-from src.discovery.interaction_agent.agent_classes import (
+from src.discovery.interaction_agent.classes import (
     HighHighLevelPlan,
     PlanModel,
     Response,

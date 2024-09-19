@@ -2,10 +2,10 @@ from src.log import logger
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import Any, Dict, List, Tuple
 
-from src.discovery.messages import api_system_message, interaction_ranking_system_message
+from src.discovery.llm.messages import api_system_message, interaction_ranking_system_message
 import json
 
-from src.discovery.llm_classes import ApiModel, ApiModelList, RankedInteractions
+from src.discovery.llm.model_classes import ApiModel, ApiModelList, RankedInteractions
 
 def llm_parse_requests_for_apis(cf, page_requests) -> List[ApiModel]:
     """
@@ -43,12 +43,4 @@ def llm_rank_interactions(cf, interactions_names: List[str]) -> List[Tuple[str, 
     ranked_interactions_tuple_list = [
         (interaction.interaction, interaction.approaches) for interaction in ranked_interactions.interactions_list
     ]
-
-    # try:
-    #     ranked_interactions_json = json.loads(ranked_interactions)
-    # except json.JSONDecodeError:
-    #     logger.error(f"Failed to parse ranked interactions JSON: {ranked_interactions}")
-    #     ranked_interactions_json = []
-
-    # return ranked_interactions_json
     return ranked_interactions_tuple_list

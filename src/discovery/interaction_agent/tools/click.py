@@ -16,7 +16,7 @@ from config import Config
 from src.discovery.utils import extract_uri, filter_html
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-from src.discovery.interaction_agent.tool_input_output_classes import ClickInput, ClickOutput
+from src.discovery.interaction_agent.classes import ClickInput, ClickOutput
 
 
 class Click(BaseTool):

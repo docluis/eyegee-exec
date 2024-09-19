@@ -5,7 +5,7 @@ from rich.table import Table
 from rich.text import Text
 from rich import print
 
-from src.discovery.interaction_agent.agent_classes import PlanModel, TestModel
+from src.discovery.interaction_agent.classes import PlanModel, TestModel
 
 
 def get_status_display(status):

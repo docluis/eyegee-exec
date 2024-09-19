@@ -4,7 +4,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.messages import AnyMessage
 
 from config import Config
-from src.discovery.interaction_agent.tool_input_output_classes import AnyInput, AnyOutput
+from src.discovery.interaction_agent.classes import AnyInput, AnyOutput
 
 
 

@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from src.discovery.messages import interaction_system_message
+from src.discovery.llm.messages import interaction_system_message
 from src.log import logger
 
 import json

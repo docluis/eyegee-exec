@@ -5,10 +5,10 @@ from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 
-from src.discovery.llm_classes import ApiModel
-from src.discovery.interaction_agent.agent_classes import CompletedTask
-from src.discovery.siteinfo import SiteInfo
-from src.discovery.page import Page
+from src.discovery.llm.model_classes import ApiModel
+from src.discovery.interaction_agent.classes import CompletedTask
+from src.discovery.classes.siteinfo import SiteInfo
+from src.discovery.classes.page import Page
 from src.log import logger
 
 remove_file_extensions = [

@@ -5,23 +5,23 @@ from bs4 import BeautifulSoup
 
 from config import Config
 from src.pretty_log import DiscoveryLog, RankerLog
-from src.discovery.schedule import Schedule
+from src.discovery.classes.schedule import Schedule
 
 from src.discovery.interaction_agent.agent import InteractionAgent
-from src.discovery.llm import (
+from src.discovery.llm.llm import (
     llm_parse_requests_for_apis,
     llm_rank_interactions,
 )
-from src.discovery.siteinfo import SiteInfo
-from src.discovery.page import Page
+from src.discovery.classes.siteinfo import SiteInfo
+from src.discovery.classes.page import Page
 from src.discovery.utils import (
     filter_html,
     parse_page_requests,
     parse_links,
 )
 from src.log import logger
-from src.discovery.summarizer import LLM_Summarizer
-from src.discovery.interactionparser import LLM_InteractionParser
+from src.discovery.llm.summarizer import LLM_Summarizer
+from src.discovery.llm.interaction_parser import LLM_InteractionParser
 
 from rich import print
 from rich.text import Text

@@ -1,6 +1,6 @@
 import json
 import pickle
-from src.discovery.siteinfo import SiteInfo
+from src.discovery.classes.siteinfo import SiteInfo
 
 
 class Graph:

@@ -17,7 +17,7 @@ from config import Config
 from src.discovery.utils import extract_uri
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.log import logger
-from src.discovery.interaction_agent.tool_input_output_classes import FillTextFieldInput, FillTextFieldOutput
+from src.discovery.interaction_agent.classes import FillTextFieldInput, FillTextFieldOutput
 
 
 class FillTextField(BaseTool):
