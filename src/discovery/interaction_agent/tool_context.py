@@ -14,7 +14,7 @@ class ToolContext(BaseModel):
     cf: Config
     tool_history: List[Tuple[str, AnyInput, AnyOutput]] = Field(default=[], description="The history of tool usage.")
     initial_uri: str = Field(description="The initial URI of the page.")
-    observed_uris: List[str] = Field(default=[initial_uri], description="The list of URIs observed during the interaction.")
+    observed_uris: List[str] = Field(default=[], description="The list of URIs observed during the interaction.")
 
     class Config:
         arbitrary_types_allowed = True
@@ -24,9 +24,8 @@ class ToolContext(BaseModel):
         self.tool_history = []
         return tool_history
     
-    def get_observed_uris_reset(self):
+    def get_observed_uris(self):
         observed_uris = self.observed_uris
-        self.observed_uris = []
         return observed_uris
     
     def add_observed_uri(self, uri: str):

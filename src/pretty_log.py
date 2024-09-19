@@ -1,11 +1,9 @@
 from typing import List
 
-from rich.console import Console
 from rich.spinner import Spinner
-from rich.live import Live
 from rich.table import Table
 from rich.text import Text
-from time import sleep
+from rich import print
 
 from src.discovery.interaction_agent.agent_classes import PlanModel, TestModel
 
@@ -13,9 +11,9 @@ from src.discovery.interaction_agent.agent_classes import PlanModel, TestModel
 def get_status_display(status):
     return {
         "running": (Spinner("dots", text="running"), "bold"),
-        # "running": (Text("running...", style="bold green"), "bold dim"),
         "done": (Text("✓ completed", style="bold blue"), "bold dim"),
         "waiting": (Text("waiting...", style="bold yellow"), "bold dim"),
+        "skipped": (Text("skipped", style="bold yellow"), "bold dim"),
     }.get(status, (Text(status), "bold"))
 
 
@@ -118,7 +116,7 @@ class HighLevelReplannerLog:
                 table.add_row(Text(f"  • Result: {test['result']}", style=style), "")
 
         return table
-    
+
 
 class ReporterLog:
     def __init__(self):
@@ -132,3 +130,57 @@ class ReporterLog:
         status_display, style = get_status_display(self.status)
         table.add_row(Text("Generating Report", style=style), status_display)
         return table
+
+
+class DiscoveryLog:
+    def __init__(self):
+        self.data = self._init_data()
+
+    def _init_data(self):
+        data = {
+            "Loading Page": "waiting",
+            "Discovering APIs": "waiting",
+            "Discovering Interactions": "waiting",
+            "Summarizing Page": "waiting",
+        }
+        return data
+
+    def update_status(self, task: str, status: str):
+        self.data[task] = status
+
+    def render(self) -> Table:
+        table = get_initial_table()
+        for task, status in self.data.items():
+            status_display, style = get_status_display(status)
+            table.add_row(Text(f" • {task}", style=style), status_display)
+        return table
+    
+class RankerLog:
+    def __init__(self):
+        self.status = "waiting"
+
+    def update_status(self, status: str):
+        self.status = status
+
+    def render(self) -> Table:
+        table = get_initial_table()
+        status_display, style = get_status_display(self.status)
+        table.add_row(Text("Ranking Interactions", style=style), status_display)
+        return table
+    
+
+def print_eyegee_exec_banner():
+    banner = r"""
+    _______  __________________________     _______  __ ____________
+   / ____\ \/ / ____/ ____/ ____/ ____/    / ____| |/ // ____/ ____/
+  / __/   \  / __/ / / __/ __/ / __/______/ __/  |   // __/ / /     
+ / /___   / / /___/ /_/ / /___/ /__/_____/ /___ /   |/ /___/ /___   
+/_____/  /_/_____/\____/_____/_____/    /_____//_/|_/_____/\____/                    
+                                                                    
+    """
+    print(Text(banner, style="bold green"))
+
+def print_eyegee_exec_footer():
+    print(Text("Discovery complete.", style="bold green"))
+    print(Text("Results saved to siteinfo.pkl"))
+    print(Text("Run 'eyegee-exec --graph' to visualize the results.", style="bold"))

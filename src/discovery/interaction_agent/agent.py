@@ -99,7 +99,7 @@ class InteractionAgent:
         high_level_replanner = high_level_replanner_prompt | self.cf.model.with_structured_output(Act)
 
         def high_high_level_planner_step(state: PlanExecute):
-            print(Text("High High Level Planner Step", style="bold green"))
+            print(Text("High High Level Planner Step", style="green"))
             high_high_level_planner_log = HighHighLevelPlannerLog()
             with Live(refresh_per_second=10) as live:
                 high_high_level_planner_log.update_status("running")
@@ -117,7 +117,7 @@ class InteractionAgent:
             return {"approaches": approaches.approaches}
 
         def high_level_plan_step(state: PlanExecute):
-            print(Text("High Level Planner Step", style="bold green"))
+            print(Text("High Level Planner Step", style="green"))
             plans = []
             with Live(refresh_per_second=10) as live:
                 high_level_planner_log = HighLevelPlannerLog(state["approaches"])
@@ -139,7 +139,7 @@ class InteractionAgent:
             return {"plans": plans}
 
         def execute_step(state: PlanExecute):
-            print(Text("Execute Step", style="bold green"))
+            print(Text("Execute Step", style="green"))
             tests = []
             all_p_reqs_parsed = []
             observed_uris = []
@@ -187,7 +187,7 @@ class InteractionAgent:
                             completed_task.status = "error"
                             completed_task.result = str(e)
                         completed_task.tool_history = context.get_tool_history_reset()
-                        observed_uris = context.get_observed_uris_reset()
+                        observed_uris = context.get_observed_uris()
                         test.steps.append(completed_task)
                         executor_log.update_task(i, j, "done")
                         live.update(executor_log.render_tasks())
@@ -215,7 +215,7 @@ class InteractionAgent:
             """
             Loops over all tests in current state and decides if a new plan is needed for each test.
             """
-            print(Text("High Level Replan Step", style="bold green"))
+            print(Text("High Level Replan Step", style="green"))
             new_plans = []
             tests = state["tests"]
             tests_to_check = [test for test in tests if not test.checked]
@@ -266,7 +266,7 @@ class InteractionAgent:
             return {"tests": tests_checked, "plans": new_plans}
 
         def report_step(state: PlanExecute):
-            print(Text("Report Step", style="bold green"))
+            print(Text("Report Step", style="green"))
             reporter_log = ReporterLog()
             with Live(refresh_per_second=10) as live:
                 reporter_log.update_status("running")

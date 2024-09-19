@@ -6,7 +6,7 @@ class Interaction:
         self.description = description
         self.input_fields = input_fields
         self.tested = False
-        self.test_report = None
+        self.test_report = "This interaction has not been tested."
         self.apis_called = []
     def to_dict(self) -> dict:
         return {

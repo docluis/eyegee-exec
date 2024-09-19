@@ -44,7 +44,7 @@ class Config:
         self.check_config()
 
     def check_config(self) -> None:
-        logger.info("Checking Config")
+        logger.debug("Checking Config")
         # TODO: Check if all required attributes are set/working
         if not hasattr(self, "driver"):
             raise ValueError("Driver not set")

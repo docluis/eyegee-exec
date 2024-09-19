@@ -99,14 +99,10 @@ The aim is to create a testing order for the interactions, where the most import
 
 Return the interactions in a List format, where the first element is the most important interaction and the last element is the least important interaction.
 
-Example Output:
-[
-    "Login Form",
-    "Search Bar",
-    "Product Button A",
-    "Contact Us Form",
-    "Product Button B",
-]
+Also assign a number to each interaction, which represents the number of approaches to be genereated for the interaction.
 
-Return an empty list [] if no interactions are found. Do not include markdown backticks in your output.
+If the interaction is very likely to be handled by JavaScript on the client side, assign a number of 0.
+For frontend interactions that likely reveal some information about the website's functionality or may lead to additional pages, assign a number of 1.
+For interactions you are unsure about, assign a number of approaches as 1.
+For important interactions, that likely submit data to the server, assign a number of approaches as 2 or 3.
 """

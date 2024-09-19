@@ -14,7 +14,7 @@ class LLM_InteractionParser:
         """
         Parse interactions of the given soup, using LLM.
         """
-        logger.info("Parsing interactions")
+        logger.debug("Parsing interactions")
         self.messages.append(HumanMessage(soup.prettify()))
         interactions = self.chain.invoke(self.messages)
         self.messages.append(interactions)

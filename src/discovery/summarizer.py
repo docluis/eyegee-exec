@@ -12,7 +12,7 @@ class LLM_Summarizer:
         """
         Create a summary of the given soup, using LLM.
         """
-        logger.info("Creating summary")
+        logger.debug("Creating summary")
         self.messages.append(HumanMessage(soup.prettify()))
         summary = self.chain.invoke(self.messages)
         self.messages.append(summary)

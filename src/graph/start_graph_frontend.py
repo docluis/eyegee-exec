@@ -7,17 +7,18 @@ graph_frontend_path = "src/graph/frontend"
 
 def start_graph_frontend():
     try:
-        subprocess.run(["npm", "install"], check=True, cwd=graph_frontend_path)
+        # Run npm install silently
+        subprocess.run(["npm", "install"], check=True, cwd=graph_frontend_path, 
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Start the frontend process
         process = subprocess.Popen(
-            # ["npm", "start"],
-            # start on port 9777
             ["npm", "run", "dev", "--", "--port", "9777"],
             cwd=graph_frontend_path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
-        logger.info("Graph frontend started")
-        logger.info("View the frontend at http://localhost:9777")
+        logger.debug("Graph frontend started")
         return process
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to start frontend: {e}")

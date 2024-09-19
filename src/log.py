@@ -2,10 +2,11 @@ import logging
 
 # Write to log and console
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     # format="%(name)s - %(asctime)s - %(levelname)s - %(message)s",
     format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("eyegee.log"), logging.StreamHandler()],
+    # handlers=[logging.FileHandler("eyegee.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler("eyegee.log")],
 )
 logger = logging.getLogger(__name__)
 

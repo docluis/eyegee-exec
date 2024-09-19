@@ -182,6 +182,6 @@ def output_to_file(si: SiteInfo) -> None:
                 output += f"Test Report: {interaction.test_report}\n"
                 output += f"APIs Called: {interaction.apis_called}\n"
                 file.write(output)
-        logger.info("Output written to output.txt")
+        logger.debug("Output written to output.txt")
     except Exception as e:
         logger.error(f"Error writing output to file: {e}")

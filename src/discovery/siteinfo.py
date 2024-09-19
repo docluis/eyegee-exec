@@ -4,7 +4,7 @@ from src.discovery.page import Page
 from src.discovery.api import Api
 from src.log import logger
 from bs4 import BeautifulSoup
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 class SiteInfo:
@@ -77,13 +77,14 @@ class SiteInfo:
 
         return added_apis
 
-    def add_interactions(self, interactions: List[dict]) -> List[str]:
+    def add_interactions(self, interactions: List[dict]) -> Tuple[List[str], bool]:
         """
         Add the given list of interactions to the SiteInfo Object.
 
-        Returns a list of the added Interaction Names.
+        Returns a list of the added Interaction Names and a boolean indicating if new interactions were added.
         """
         interaction_names = []
+        new_interactions_added = False
         for interaction in interactions:
             interaction_names.append(interaction["name"])
             # check if the interaction already exists in self.interactions
@@ -93,13 +94,14 @@ class SiteInfo:
                     found = True
                     break
             if not found:
+                new_interactions_added = True
                 interaction_obj = Interaction(
                     interaction["name"],
                     interaction["description"],
                     interaction["input_fields"],  # json.loads?
                 )
                 self.interactions.append(interaction_obj)
-        return interaction_names
+        return interaction_names, new_interactions_added
     
     def get_interaction(self, interaction_name: str) -> Interaction:
         for interaction in self.interactions:

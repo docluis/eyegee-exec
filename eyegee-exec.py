@@ -6,26 +6,33 @@ from src.graph.backend.app import init_app
 from src.discovery.discovery import discover
 from src.discovery.utils import output_to_file
 from src.log import logger
+from src.pretty_log import print_eyegee_exec_banner, print_eyegee_exec_footer
 from src.graph.start_graph_frontend import start_graph_frontend
 import pickle
 import argparse
 
+from rich.text import Text
+from rich import print
 
 def start_servers():
+    print(Text("Starting eyegee-exec graph servers...", style="bold green"))
     # Start the frontend in a separate thread
+    print(Text("Starting frontend...", style="bold green"))
     frontend_thread = threading.Thread(target=start_graph_frontend)
     frontend_thread.start()
 
     # Give the frontend some time to initialize (adjust if needed)
     time.sleep(5)
 
+    print(Text("Frontend started, view at http://localhost:9777", style="bold green"))
+    print(Text("Starting backend...", style="bold green"))
     # Start the backend in the main thread
-    app = init_app()
-    app.run(port=9778, debug=True)
+    backend_app = init_app()
+    backend_app.run(port=9778, debug=False, use_reloader=False)
 
-    # Wait for the frontend thread to complete
+    # Wait for the frontend thread to completed
     frontend_thread.join()
-
+    
 
 parser = argparse.ArgumentParser(description="EyeGee")
 parser.add_argument(
@@ -42,8 +49,9 @@ args = parser.parse_args()
 if args.discover:
     cf = Config()
 
-    logger.info("Starting EyeGee")
-    logger.info(f"Taget: {cf.target}")
+    logger.debug("Starting EyeGee")
+    logger.debug(f"Taget: {cf.target}")
+    print_eyegee_exec_banner()
 
     # Discover the website
     si = discover(cf)
@@ -53,7 +61,8 @@ if args.discover:
         pickle.dump(si, f)
     output_to_file(si)
 
-    logger.info("EyeGee complete")
+    logger.debug("EyeGee complete")
+    print_eyegee_exec_footer()
 
     cf.driver.quit()
 

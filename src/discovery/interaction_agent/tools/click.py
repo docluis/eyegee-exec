@@ -53,7 +53,7 @@ class Click(BaseTool):
 
             time.sleep(self.cf.selenium_rate)
             soup_after = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-            message = f"Clicked element with name: {xpath_identifier}."
+            message = f"Clicked element with name: {xpath_identifier}. Current URL: {self.cf.driver.current_url}"
             page_diff = unified_diff(
                 filter_html(soup_before).prettify().splitlines(),
                 filter_html(soup_after).prettify().splitlines(),
@@ -68,6 +68,10 @@ class Click(BaseTool):
         except Exception as e:
             # logging.error(str(e))
             logging.debug("Error: Failed to click element.")
-            output = ClickOutput(success=False, message="Failed to click element.", error=str(e))
+            output = ClickOutput(
+                success=False,
+                message=f"Failed to click element. Current URL: {self.cf.driver.current_url}",
+                error=str(e),
+            )
             self.context.tool_history.append((self.name, input, output))
             return output
