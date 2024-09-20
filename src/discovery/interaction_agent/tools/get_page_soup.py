@@ -3,7 +3,6 @@ import os
 import time
 import logging
 from bs4 import BeautifulSoup
-import pandas as pd
 from langchain_core.tools import BaseTool
 from langchain_core.pydantic_v1 import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
