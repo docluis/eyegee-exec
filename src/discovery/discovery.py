@@ -53,7 +53,14 @@ def discover(cf: Config) -> SiteInfo:
                 # Load the page
                 discovery_log.update_status("Loading Page", "running")
                 live.update(discovery_log.render())
-                cf.driver.get(f"{cf.target}{uri}")
+                try:
+                    cf.driver.get(f"{cf.target}{uri}")
+                except Exception as e:
+                    logger.error(f"Error loading page: {e}")
+                    discovery_log.update_status("Loading Page", "skipped")
+                    live.update(discovery_log.render())
+                    print(Text(f"Error loading page: {uri}", style="bold red"))
+                    continue
                 time.sleep(cf.selenium_rate)
 
                 originial_soup = BeautifulSoup(cf.driver.page_source, "html.parser")

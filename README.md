@@ -45,19 +45,19 @@ vim .env
 OPENAI_API_KEY=<YOUR_KEY_HERE>
 ```
 
-6. **Configure the Application**
+6. **Optional: Configure the Application**
    Adjust the configuration in `config.py`:
 
 ```bash
 vim config.py
-# Set the target website and other settings such as chromedriver_path
+# Set llm model other settings such as chromedriver_path
 ```
 
 7. **Execute the Discovery Module**
    Run the discovery module to start mapping the web application:
 
 ```bash
-python eyegee-exec.py -d
+python eyegee-exec.py -d -t http://localhost:80/
 ```
 
 8. **Visualize the Results**
@@ -69,4 +69,4 @@ python eyegee-exec.py -g
 
 ## Test this tool
 
-An example web application to test this tool can be accessed under: https://github.com/docluis/dentist
+An example web application to test this tool can be accessed under: https://github.com/docluis/dentist or https://github.com/docluis/card_market

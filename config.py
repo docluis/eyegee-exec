@@ -7,17 +7,21 @@ from langchain_core.output_parsers import StrOutputParser
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
+from argparse import Namespace
 
 
 class Config:
-    def __init__(self) -> None:
+    def __init__(self, args: Namespace) -> None:
         load_dotenv()
+        self.args = args
 
         ####### Selenium #######
         self.chromedriver_path = "/usr/bin/chromedriver"
         self.service = ChromeService(executable_path=self.chromedriver_path)
         self.options = ChromeOptions()
         self.options.add_argument("--lang=en")
+        if self.args.headless:
+            self.options.add_argument("--headless=new")
         self.options.add_experimental_option("perfLoggingPrefs", {"enableNetwork": True})
         self.options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
         self.driver = webdriver.Chrome(service=self.service, options=self.options)
@@ -31,15 +35,15 @@ class Config:
 
 
         ####### Target #######
-        # website = "http://127.0.0.1:3000"
-        website = "http://localhost:80/"
+        website = self.args.target
 
-        parsed_url = urlparse(website)
-        self.target = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        self.initial_path = parsed_url.path
-
-        ####### Interactions #######
-        self.interaction_test_limit = 10 # the maximum number of interactions to test
+        try:
+            parsed_url = urlparse(website)
+            self.target = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            self.initial_path = parsed_url.path
+        except Exception as e:
+            logger.error(f"Error parsing target URL: {e}")
+            exit(1)
 
         ####### Check Config #######
         self.check_config()
