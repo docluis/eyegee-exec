@@ -3,7 +3,7 @@ import os
 import time
 import logging
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -23,8 +23,8 @@ class SelectOption(BaseTool):
     cf: Config
     context: ToolContext
 
-    name = "select_option"
-    description = (
+    name: str = "select_option"
+    description: str = (
         "Function: Select an option from a select menu.\n"
         "Args:\n"
         "  - xpath_identifier: str The xpath of the select menu. (required)\n"
@@ -48,7 +48,8 @@ class SelectOption(BaseTool):
             actual_value = select.first_selected_option.text
 
             output = SelectOptionOutput(
-                success=True, message=f"Selected option: {xpath_identifier} with value: {visible_value}. Actual value now: {actual_value}."
+                success=True,
+                message=f"Selected option: {xpath_identifier} with value: {visible_value}. Actual value now: {actual_value}.",
             )
             self.context.tool_history.append((self.name, input, output))
             self.context.add_observed_uri(extract_uri(self.cf.driver.current_url))

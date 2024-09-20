@@ -1,4 +1,4 @@
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import List, Union, Tuple, Optional, Any
 
 from src.discovery.llm.model_classes import ApiModel
@@ -101,6 +101,8 @@ AnyInput = Union[
     GetOutgoingRequestsInput,
     SelectOptionInput,
     NavigateInput,
+    GetElementInput,
+    FillDateFieldInput,
 ]
 
 AnyOutput = Union[
@@ -110,6 +112,8 @@ AnyOutput = Union[
     GetOutgoingRequestsOutput,
     SelectOptionOutput,
     NavigateOutput,
+    GetElementOutput,
+    FillDateFieldOutput,
 ]
 
 

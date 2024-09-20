@@ -3,7 +3,7 @@ import os
 import time
 import logging
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -23,8 +23,8 @@ class FillTextField(BaseTool):
     cf: Config
     context: ToolContext
 
-    name = "fill_text_field"
-    description = (
+    name: str = "fill_text_field"
+    description: str = (
         "Function: Fill in a text field.\n"
         "Args:\n"
         "  - xpath_identifier: str The xpath of the element to be clicked. (required)\n"

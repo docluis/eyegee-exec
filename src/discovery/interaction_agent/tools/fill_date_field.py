@@ -3,7 +3,7 @@ import os
 import time
 import logging
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -23,8 +23,8 @@ class FillDateField(BaseTool):
     cf: Config
     context: ToolContext
 
-    name = "fill_date_field"
-    description = (
+    name: str = "fill_date_field"
+    description: str = (
         "Function: Fill in a date field.\n"
         "Args:\n"
         "  - xpath_identifier: str The xpath of the element to be clicked. (required)\n"
@@ -40,9 +40,11 @@ class FillDateField(BaseTool):
 
     def _run(self, xpath_identifier: str, year_value: str, month_value: str, day_value: str) -> FillDateFieldOutput:
         """Use the tool."""
-        input = FillDateFieldInput(xpath_identifier=xpath_identifier, year_value=year_value, month_value=month_value, day_value=day_value)
+        input = FillDateFieldInput(
+            xpath_identifier=xpath_identifier, year_value=year_value, month_value=month_value, day_value=day_value
+        )
         try:
-            formatted_date = f"{month_value}-{day_value}-{year_value}" # match the american locale
+            formatted_date = f"{month_value}-{day_value}-{year_value}"  # match the american locale
             logger.debug(f"Filling in the date field {xpath_identifier} with {formatted_date}")
             element = self.cf.driver.find_element(By.XPATH, xpath_identifier)
             # clear the field first

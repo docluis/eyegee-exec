@@ -4,7 +4,7 @@ import time
 import logging
 from bs4 import BeautifulSoup
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -24,8 +24,8 @@ class GetElement(BaseTool):
     cf: Config
     context: ToolContext
 
-    name = "get_element"
-    description = (
+    name: str = "get_element"
+    description: str = (
         "Function: Get the element. Use this tool to get the inspect the current value or text of the element.\n"
         "Args:\n"
         "  - xpath_identifier: str The xpath of the element to be clicked. (required)\n"
@@ -59,8 +59,6 @@ class GetElement(BaseTool):
             return output
         except Exception as e:
             logger.debug("Error: Failed to get the element.")
-            output = GetElementOutput(
-                success=False, message="Failed to get the element.", error=str(e), element=None
-            )
+            output = GetElementOutput(success=False, message="Failed to get the element.", error=str(e), element=None)
             self.context.tool_history.append((self.name, input, output))
             return output

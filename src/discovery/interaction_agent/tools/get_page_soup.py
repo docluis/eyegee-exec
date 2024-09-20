@@ -4,7 +4,7 @@ import time
 import logging
 from bs4 import BeautifulSoup
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -24,8 +24,8 @@ class GetPageSoup(BaseTool):
     cf: Config
     context: ToolContext
 
-    name = "get_page_soup"
-    description = (
+    name: str = "get_page_soup"
+    description: str = (
         "Function: Get the page source.\n"
         "Args:\n"
         "  - filtered: bool Whether the page source should be filtered. (optional, default: True)\n"
@@ -60,6 +60,8 @@ class GetPageSoup(BaseTool):
             return output
         except Exception as e:
             logging.debug("Error: Failed to fill in the text field.")
-            output = GetPageSoupOutput(success=False, message="Failed to fill in the text field.", error=str(e), page_source=None)
+            output = GetPageSoupOutput(
+                success=False, message="Failed to fill in the text field.", error=str(e), page_source=None
+            )
             self.context.tool_history.append((self.name, input, output))
             return output

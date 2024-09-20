@@ -3,7 +3,7 @@ import os
 import time
 import logging
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -23,8 +23,8 @@ class GetOutgoingRequests(BaseTool):
     cf: Config
     context: ToolContext
 
-    name = "get_outgoing_requests"
-    description = (
+    name: str = "get_outgoing_requests"
+    description: str = (
         "Function: Get the outgoing requests.\n"
         "Args:\n"
         "  - filtered: bool Whether the outgoing requests should be filtered. (optional, default: True)\n"
@@ -56,8 +56,6 @@ class GetOutgoingRequests(BaseTool):
             return output
         except Exception as e:
             logging.debug("Error: Failed to get outgoing requests.")
-            output = GetOutgoingRequestsOutput(
-                success=False, message="Failed to get outgoing requests.", error=str(e)
-            )
+            output = GetOutgoingRequestsOutput(success=False, message="Failed to get outgoing requests.", error=str(e))
             self.context.tool_history.append((self.name, input, output))
             return output

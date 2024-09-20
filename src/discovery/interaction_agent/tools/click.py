@@ -4,7 +4,7 @@ import time
 import logging
 from bs4 import BeautifulSoup
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -23,8 +23,8 @@ class Click(BaseTool):
     context: ToolContext
     # context: Context
 
-    name = "click"
-    description = (
+    name: str = "click"
+    description: str = (
         "Function: Click on an element.\n"
         "Args:\n"
         "  - xpath_identifier: str The xpath of the element to be clicked. (required)\n"

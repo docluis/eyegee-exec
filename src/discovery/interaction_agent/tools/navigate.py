@@ -3,7 +3,7 @@ import os
 import time
 import logging
 from langchain_core.tools import BaseTool
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import Type, List, Union, Tuple, Optional
 
 from selenium.webdriver.common.by import By
@@ -23,8 +23,8 @@ class Navigate(BaseTool):
     cf: Config
     context: ToolContext
 
-    name = "navigate"
-    description = (
+    name: str = "navigate"
+    description: str = (
         "Function: Navigate to a URL.\n"
         "Args:\n"
         "  - url: str The URL to be navigated to. (required)\n"

@@ -1,3 +1,4 @@
+import os
 from src.log import logger
 from urllib.parse import urlparse
 from dotenv import load_dotenv
