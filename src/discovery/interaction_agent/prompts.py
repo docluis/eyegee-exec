@@ -2,31 +2,47 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 
 system_high_high_level_planner_prompt = """
-You are a professional web tester assigned to evaluate a specific element on a web application page.
+You are a professional web tester tasked with evaluating a specific element on a web application. Your role is to create a high-level testing plan that covers the **complete functionality** of this element, including both intended use cases and potential error scenarios.
 
-Create a high-level plan of different approaches to test an interaction feature.
-The goal is to cover the full functionality of this element, including intended use cases as well as identifying possible error messages.
+Your Objectives:
+- Plan diverse approaches to test the interaction feature.
+- Ensure the approaches cover **real-world usage** and **edge cases**.
+- Generate **unique, realistic inputs** for each approach—avoid generic placeholders like "valid_username" or "invalid_password."
+- Limit the number of approaches to a maximum of **{limit}**.
 
-# Example:
-Input:
-*URI*: /search
-*Element*:
-{{"name": "Search Field", "description": "A field to search for cards."}}
-*Page Soup*:
-HTML code of the page
+Input Generation Guidance:
+- Only generate inputs if you are sure the target element exists on the page, do NOT make assumptions about potential input fields.
+- **Valid Inputs**: Use unique and properly formatted usernames (e.g., "user_test_random32ab") and strong passwords adhering to security best practices (e.g., "SecurePass$123").
+- **Likely-Taken Inputs**: Use common usernames (e.g., "admin", "user") or improperly formatted data that would trigger an error (e.g., no special characters for a password that requires them).
+- **Invalid Inputs**: Test with invalid or improperly formatted data that should lead to an error (e.g., "`~&$#@/password").
 
-Output:
-*Approaches*:
-1. Test the search field with a valid search query.
-2. Test the search field with an invalid search query.
-3. Test the search field with special characters.
-4. Test the search field with an empty search query.
+Example Approaches:
 
-Cover as much functionality as possible with a minimum number of approaches.
+Example 1:
 
-IMPORTANT: Limit it to max {limit} approaches.
+- **URI**: /search
+- **Element**: {{"name": "Search Field", "description": "A field to search for cards."}}
+- **Page Soup**: (HTML code of the page that contains the search field)
+- **Approaches**:
+  - Test the search field with a valid query: "Blue-Eyes White Dragon".
+  - Test with special characters: "@!#&$".
 
+Example 2:
+
+- **URI**: /login
+- **Element**: {{"name": "Login Button", "description": "A button to log in to the application."}}
+- **Page Soup**: (HTML code of the page that contains the username field, password field, and a login button)
+- **Approaches**:
+  - Test with a valid, unique username and password: "test_user123", "StrongPass!789".
+  - Test with a common username and weak password: "admin", "password123".
+  - Test with empty username and password fields.
+
+Important: Ensure all test inputs are **realistic**, **contextually relevant** and do not make assumptions.
+
+Reminder: You must generate exactly **{limit}** approach(es). Do not exceed this number.
 """
+
+
 
 human_high_high_level_planner_prompt = """
 *URI*: {uri}
@@ -35,6 +51,8 @@ human_high_high_level_planner_prompt = """
 *Page Soup*:
 {page_soup}
 
+
+Reminder: You must generate exactly **{limit}** approach(es). Do not exceed this number.
 """
 
 high_high_level_planner_prompt = ChatPromptTemplate(
@@ -59,6 +77,7 @@ This plan should:
 *Important*:
   - Do not include any steps that involve verifying specific behaviors or outcomes (e.g., avoid steps like "Verify that an error message is displayed").
   - Do not make any assumptions about how web applications should behave.
+  - Generate the minimal amount of steps necessary to test the feature.
   - Keep the steps minimal and action-oriented.
 
 Keep in mind that the page is already loaded, and you have access to the page soup.
@@ -76,8 +95,8 @@ Output:
 - PlanModel:
   - approach: Test the login form with username and password containing special characters.
   - plan:
-    - Fill in the username field with a special character
-    - Fill in the password field with a special character
+    - Fill in the username field with the text "special_username@#$%42"
+    - Fill in the password field with the text "special_password@#$%42"
     - Click the login button
 
 """
@@ -332,11 +351,3 @@ Comparing the page source before and after the interaction, the following differ
 ---
 
 """
-
-
-# reporter_prompt = ChatPromptTemplate.from_messages(
-#     [
-#         ("system", system_reporter_prompt),
-#         ("placeholder", "{messages}"),
-#     ]
-# )

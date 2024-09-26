@@ -121,7 +121,7 @@ class HighHighLevelPlan(BaseModel):
     """High-level plan for testing an interaction feature."""
 
     approaches: List[str] = Field(
-        description="Different approaches to test an interaction feature, should be in sorted order"
+        description="Different approaches to test an interaction feature, should be in sorted order. Pay attention to the specified limit of approaches."
     )
 
 

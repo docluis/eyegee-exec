@@ -118,6 +118,9 @@ class InteractionAgent:
                         "limit": state["limit"],
                     }
                 )
+                # adjust length if above limit
+                if len(approaches.approaches) > int(state["limit"]):
+                    approaches.approaches = approaches.approaches[: int(state["limit"])]
                 high_high_level_planner_log.update_status("done")
                 live.update(high_high_level_planner_log.render())
             return {"approaches": approaches.approaches}

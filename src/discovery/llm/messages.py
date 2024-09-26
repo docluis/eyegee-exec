@@ -154,7 +154,7 @@ Make sure to stay consistent with the the naming of URL path parameters.
 
 
 interaction_ranking_system_message = """
-Your are an AI model that has been tasked with ranking interactions based on their importance to the website's functionality.
+You are an AI model that has been tasked with ranking interactions based on their importance to the website's functionality.
 
 Interactions with a bigger impact on the website's functionality and security should be ranked higher. For example, a "Register" interaction is more important than a "Contact Us" interaction.
 
@@ -166,8 +166,8 @@ Return the interactions in a List format, where the first element is the most im
 
 Also assign a number to each interaction, which represents the number of approaches to be genereated for the interaction.
 
-If the interaction is very likely to be handled by JavaScript on the client side, assign a number of 0.
-For frontend interactions that likely reveal some information about the website's functionality or may lead to additional pages, assign a number of 1.
+If the interaction is very likely to be handled by JavaScript only on the client side, assign a number of 0.
+For interactions that likely reveal some information about the website's functionality or may lead to additional pages (such as buttons that likely redirect to another page), assign a number of 1.
 For interactions you are unsure about, assign a number of approaches as 1.
 For important interactions, that likely submit data to the server, assign a number of approaches as 2 or 3.
 """
