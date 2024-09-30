@@ -19,14 +19,12 @@ from rich import print
 def start_servers():
     print(Text("Starting eyegee-exec graph servers...", style="bold green"))
     # Start the frontend in a separate thread
-    print(Text("Starting frontend...", style="bold green"))
     frontend_thread = threading.Thread(target=start_graph_frontend)
     frontend_thread.start()
 
     # Give the frontend some time to initialize (adjust if needed)
     time.sleep(5)
 
-    print(Text("Frontend started, view at http://localhost:9777", style="bold green"))
     print(Text("Starting backend...", style="bold green"))
     # Start the backend in the main thread
     backend_app = init_app()
