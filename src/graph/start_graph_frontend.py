@@ -10,6 +10,7 @@ graph_frontend_path = "src/graph/frontend"
 def start_graph_frontend():
     try:
         print(Text("Installing frontend dependencies...", style="bold green"))
+        print(Text("This may take a few minutes the first time you run it", style="yellow"))
         # Run npm install silently, ensuring it completes before moving on
         install_result = subprocess.run(
             ["npm", "install"],
