@@ -292,7 +292,10 @@ You observed these outgoing requests:
 {outgoing_requests}
 
 The page source difference before and after interaction:
+```
 {page_source_diff}
+```
+Consider any new elements or changes in the page source difference that indicate further interaction is needed to fully test the feature. Include interactions with these new elements in your new plan if necessary.
 
 Based on this, determine if a new plan is necessary, and if so, provide a minimal new plan focused on interaction actions only.
 New plans should contain all necessary steps to test the feature.

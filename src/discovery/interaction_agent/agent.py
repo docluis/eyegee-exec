@@ -249,7 +249,7 @@ class InteractionAgent:
                         "uri": uri,
                         "interaction": interaction,
                         "approach": test.approach,
-                        "previous_plan": "\n".join(test.plan.plan),
+                        "previous_plan": "\n".join([f"- {step}" for step in test.plan.plan]),
                         "steps": format_steps(test.steps),
                         "outgoing_requests": api_models_to_str(test.outgoing_requests_after),
                         "page_source_diff": page_source_diff,
