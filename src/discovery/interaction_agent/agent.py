@@ -25,7 +25,7 @@ from src.pretty_log import (
     HighLevelReplannerLog,
     ReporterLog,
 )
-from src.discovery.interaction_agent.classes import AnyInput, AnyOutput
+from src.discovery.interaction_agent.classes import AnyInput, AnyOutput, ReplanModel
 
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.discovery.interaction_agent.tools.click import Click
@@ -256,15 +256,17 @@ class InteractionAgent:
                     }
 
                     decision = high_level_replanner.invoke(input=input)
-                    if isinstance(decision.action, PlanModel):
+                    if isinstance(decision.action, ReplanModel):
                         logger.debug(f"Descision: New plan is needed")
-                        logger.debug(f"New Plan: {decision.action.plan}")
+                        logger.debug(f"New Steps: {decision.action.new_steps}")
                         high_level_replanner_log.update_test(i, "done", "New plan!")
                         live.update(high_level_replanner_log.render())
                         test.checked = True
                         test.in_report = False
                         tests_checked.append(test)
-                        new_plans.append(decision.action)
+                        new_plan = test.plan.plan + decision.action.new_steps
+                        logger.debug(f"New Plan: {new_plan}")
+                        new_plans.append(PlanModel(approach=test.approach, plan=new_plan))
                     elif isinstance(decision.action, Response):
                         high_level_replanner_log.update_test(i, "done", "No new plan is needed")
                         live.update(high_level_replanner_log.render())

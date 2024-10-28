@@ -71,6 +71,7 @@ This plan should:
   - Be minimal and not overly detailed, as it is just the initial plan.
   - Generate **unique, realistic inputs** for each approach—avoid generic placeholders like "valid_username" or "invalid_password."
   - *Focus solely on the actions to perform, without making any assumptions about expected behaviors or outcomes.*
+  - All test are analyzed, so any "verify" or "observe" steps are reduntant
 
 Input Generation Guidance:
   - Only generate inputs if you are sure the target element exists on the page, do NOT make assumptions about potential input fields.
@@ -281,9 +282,10 @@ You are tasked with evaluating the following feature of a web application:
 Any new plans should:
   - Be specific to the element, the page soup, and the current approach.
   - Be minimal and not overly detailed, as it is just the initial plan.
-  - Include ALL steps of the previous plan and extend it if necessary.
+  - Only provide additional steps, that the previous plan should be followed up with.
   - Generate **unique, realistic inputs** for each approach—avoid generic placeholders like "valid_username" or "invalid_password."
   - *Focus solely on the actions to perform, without making any assumptions about expected behaviors or outcomes.*
+  - All test are analyzed, so any "verify" or "observe" steps are reduntant
 
 Input Generation Guidance:
   - Only generate inputs if you are sure the target element exists on the page, do NOT make assumptions about potential input fields.
