@@ -255,21 +255,21 @@ class InteractionAgent:
                         "page_source_diff": page_source_diff,
                     }
 
-                    descision = high_level_replanner.invoke(input=input)
-                    if isinstance(descision.action, PlanModel):
+                    decision = high_level_replanner.invoke(input=input)
+                    if isinstance(decision.action, PlanModel):
                         logger.debug(f"Descision: New plan is needed")
-                        logger.debug(f"New Plan: {descision.action.plan}")
-                        high_level_replanner_log.update_test(i, "done", "New Plan is needed")
+                        logger.debug(f"New Plan: {decision.action.plan}")
+                        high_level_replanner_log.update_test(i, "done", "New plan!")
                         live.update(high_level_replanner_log.render())
                         test.checked = True
                         test.in_report = False
                         tests_checked.append(test)
-                        new_plans.append(descision.action)
-                    elif isinstance(descision.action, Response):
+                        new_plans.append(decision.action)
+                    elif isinstance(decision.action, Response):
                         high_level_replanner_log.update_test(i, "done", "No new plan is needed")
                         live.update(high_level_replanner_log.render())
                         logger.debug(f"Descision: No new plan is needed")
-                        logger.debug(f"Response: {descision.action.text}")
+                        logger.debug(f"Response: {decision.action.text}")
                         test.checked = True
                         test.in_report = True
                         tests_checked.append(test)
