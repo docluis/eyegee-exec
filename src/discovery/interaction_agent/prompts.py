@@ -7,14 +7,13 @@ You are a professional web tester tasked with evaluating a specific element on a
 Your Objectives:
 - Plan diverse approaches to test the interaction feature.
 - Ensure the approaches cover **real-world usage** and **edge cases**.
-- Generate **unique, realistic inputs** for each approach—avoid generic placeholders like "valid_username" or "invalid_password."
 - Limit the number of approaches to a maximum of **{limit}**.
 
-Input Generation Guidance:
-- Only generate inputs if you are sure the target element exists on the page, do NOT make assumptions about potential input fields.
-- **Valid Inputs**: Use unique and properly formatted usernames (e.g., "user_test_random32ab") and strong passwords adhering to security best practices (e.g., "SecurePass$123").
-- **Likely-Taken Inputs**: Use common usernames (e.g., "admin", "user") or improperly formatted data that would trigger an error (e.g., no special characters for a password that requires them).
-- **Invalid Inputs**: Test with invalid or improperly formatted data that should lead to an error (e.g., "`~&$#@/password").
+Approach Guidelines:
+- Each approach should be unique and cover a different aspect of the feature.
+- Approaches should only focus on the actions to perform, not the expected outcomes.
+- Approaches should not include any assumptions about the feature's behavior.
+- All test are analyzed, so approaches should not contain any "verify" or "observe" steps.
 
 Example Approaches:
 
@@ -24,8 +23,8 @@ Example 1:
 - **Element**: {{"name": "Search Field", "description": "A field to search for cards."}}
 - **Page Soup**: (HTML code of the page that contains the search field)
 - **Approaches**:
-  - Test the search field with a valid query: "Blue-Eyes White Dragon".
-  - Test with special characters: "@!#&$".
+  - Test the search field with a valid query.
+  - Test with special characters.
 
 Example 2:
 
@@ -33,11 +32,9 @@ Example 2:
 - **Element**: {{"name": "Login Button", "description": "A button to log in to the application."}}
 - **Page Soup**: (HTML code of the page that contains the username field, password field, and a login button)
 - **Approaches**:
-  - Test with a valid, unique username and password: "test_user123", "StrongPass!789".
-  - Test with a common username and weak password: "admin", "password123".
+  - Test with a valid, unique username and password.
+  - Test with a common username and weak password.
   - Test with empty username and password fields.
-
-Important: Ensure all test inputs are **realistic**, **contextually relevant** and do not make assumptions.
 
 Reminder: You must generate exactly **{limit}** approach(es). Do not exceed this number.
 """
@@ -72,8 +69,16 @@ Given a specific approach, create a plan of individual steps to test an interact
 This plan should:
   - Be specific to the element, the page soup, and the current approach.
   - Be minimal and not overly detailed, as it is just the initial plan.
+  - Generate **unique, realistic inputs** for each approach—avoid generic placeholders like "valid_username" or "invalid_password."
   - *Focus solely on the actions to perform, without making any assumptions about expected behaviors or outcomes.*
+  - All test are analyzed, so any "verify" or "observe" steps are reduntant
 
+Input Generation Guidance:
+  - Only generate inputs if you are sure the target element exists on the page, do NOT make assumptions about potential input fields.
+  - **Valid Inputs**: Use unique and properly formatted usernames (e.g., "user_test_random32ab") and strong passwords adhering to security best practices (e.g., "SecurePass$123").
+  - **Likely-Taken Inputs**: Use common usernames (e.g., "admin", "user") or improperly formatted data that would trigger an error (e.g., no special characters for a password that requires them).
+  - **Invalid Inputs**: Test with invalid or improperly formatted data that should lead to an error (e.g., "`~&$#@/password").
+  
 *Important*:
   - Do not include any steps that involve verifying specific behaviors or outcomes (e.g., avoid steps like "Verify that an error message is displayed").
   - Do not make any assumptions about how web applications should behave.
@@ -267,19 +272,33 @@ Given a specific approach, the previous plan, and the observed steps, the goal i
 You are tasked with evaluating the following feature of a web application:
 {interaction}
 
-Your approach is:
-{approach}
-
 *Important*:
+- Consider any new elements or changes in the page source difference that indicate further interaction is needed to fully test the feature.
+- Include interactions with these new elements in your new plan if necessary.
 - Only return a new plan if the previous plan did not fully test the feature.
-- Keep the steps minimal and action-oriented, without assumptions about how the feature should behave.
-- Do not include any steps that verify specific behaviors or outcomes.
 - If no further interaction is needed and the plan is complete, respond to the user indicating the test is finished.
+- Keep in mind that the target interaction may not be fully functional or the current approach may not be applicable to fully interact with the element. In such cases, do not generate a new plan and inform the user that the test is complete.
 
-This plan should focus solely on actions to perform, based on what was observed, without assuming any specific outcome.
+Any new plans should:
+  - Be specific to the element, the page soup, and the current approach.
+  - Be minimal and not overly detailed, as it is just the initial plan.
+  - Only provide additional steps, that the previous plan should be followed up with.
+  - Generate **unique, realistic inputs** for each approach—avoid generic placeholders like "valid_username" or "invalid_password."
+  - *Focus solely on the actions to perform, without making any assumptions about expected behaviors or outcomes.*
+  - All test are analyzed, so any "verify" or "observe" steps are reduntant
+
+Input Generation Guidance:
+  - Only generate inputs if you are sure the target element exists on the page, do NOT make assumptions about potential input fields.
+  - **Valid Inputs**: Use unique and properly formatted usernames (e.g., "user_test_random32ab") and strong passwords adhering to security best practices (e.g., "SecurePass$123").
+  - **Likely-Taken Inputs**: Use common usernames (e.g., "admin", "user") or improperly formatted data that would trigger an error (e.g., no special characters for a password that requires them).
+  - **Invalid Inputs**: Test with invalid or improperly formatted data that should lead to an error (e.g., "`~&$#@/password").
+  - The type of input should be based on the given approach
 """
 
 human_high_level_replanner_prompt = """
+Your approach is:
+{approach}
+
 Your previous plan was:
 {previous_plan}
 
@@ -292,14 +311,12 @@ You observed these outgoing requests:
 {outgoing_requests}
 
 The page source difference before and after interaction:
+```
 {page_source_diff}
+```
 
-Based on this, determine if a new plan is necessary, and if so, provide a minimal new plan focused on interaction actions only.
-New plans should contain all necessary steps to test the feature.
-
-*Important*: Only return a new plan if the previous plan did not fully test the feature.
-
-If you are satisfied with the previous plan and the observed steps, you can return a Response to the user stating that the test is complete. And providing a reason for not continuing the test.
+Reminder: Only generate a new plan if the new plan uncovers additional web-app surface area that was not covered by the previous plan.
+Do not treat the new plan as a way to correct mistakes in the previous plan. Only generate a new plan if the previous plan did not fully test the feature.
 """
 
 

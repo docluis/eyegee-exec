@@ -118,16 +118,16 @@ def format_steps(steps: List[CompletedTask]) -> str:
     """
     output = ""
     for step in steps:
-        output += f"Step: {step.task}\n"
-        output += f"\tStatus: {step.status}\n"
-        output += f"\tResult: {step.result}\n"
-        output += f"\tTool history: {len(step.tool_history)}\n"
+        output += f"- Step: {step.task}\n"
+        output += f"\t- Status: {step.status}\n"
+        output += f"\t- Result: {step.result}\n"
+        output += f"\t- Tool history: {len(step.tool_history)}\n"
         for tool_call in step.tool_history:
-            output += f"\t\tTool call: {tool_call[0]}\n"
-            output += f"\t\tInput: {tool_call[1]}\n"
-            output += f"\t\tOutput\n"
-            output += f"\t\t\tSuccess: {tool_call[2].success}\n"
-            output += f"\t\t\tMessage: {tool_call[2].message}\n"
+            output += f"\t\t- Tool call: {tool_call[0]}\n"
+            output += f"\t\t- Input: {tool_call[1]}\n"
+            output += f"\t\t- Output\n"
+            output += f"\t\t\t- Success: {tool_call[2].success}\n"
+            output += f"\t\t\t- Message: {tool_call[2].message}\n"
             # output += f"\t\t\tError: {tool_call[2].error if tool_call[2].error else 'No error'}\n"
             # dont print page source, outgoing requests
     return output
@@ -155,6 +155,8 @@ def api_models_to_str(apis: List[ApiModel]) -> str:
     # method: str = Field(description="The HTTP method used in the API call, such as 'GET' or 'POST'")
     # headers: Dict[str, str] = Field(description="The headers sent with the API call")
     # postData: Optional[Dict[str, str]] = Field(description="The data sent with the API call, key-value pairs")
+    if not apis:
+        return "No APIs calls identified."
     output = ""
     for api in apis:
         output += f"API: {api.method} {api.url}\n"

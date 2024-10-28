@@ -131,6 +131,11 @@ class PlanModel(BaseModel):
     approach: str = Field(description="The approach for the interaction feature.")
     plan: List[str] = Field(description="The step-by-step plan for this approach.")
 
+class ReplanModel(BaseModel):
+    """Model for representing the replan for a single approach."""
+
+    new_steps: List[str] = Field(description="The new steps for this approach, to be added to the previous plan.")
+
 
 class CompletedTask(BaseModel):
     """Model for representing a completed step of a plan for a single approach."""
@@ -165,7 +170,7 @@ class Response(BaseModel):
 class Act(BaseModel):
     """Action to perform."""
 
-    action: Union[Response, PlanModel] = Field(
+    action: Union[Response, ReplanModel] = Field(
         description="Action to perform. If you want to respond to user, send a Response text. \n"
-        "If you need to further use tools to get the answer, use PlanModel with the plan and approach."
+        "If you would like to provide a new, updated plan, use ReplanModel."
     )
