@@ -1,4 +1,6 @@
 import os
+
+from langchain_anthropic import ChatAnthropic
 from src.log import logger
 from urllib.parse import urlparse
 from dotenv import load_dotenv
@@ -31,6 +33,8 @@ class Config:
         self.model = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
         # self.advanced_model= ChatOpenAI(model="gpt-4o", temperature=0.2)
         self.advanced_model = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+        # self.model = ChatAnthropic(model="claude-3-haiku-20240307", temperature=0.2)
+        # self.advanced_model = ChatAnthropic(model="claude-3-haiku-20240307", temperature=0.2)
         self.parser = StrOutputParser()
 
 

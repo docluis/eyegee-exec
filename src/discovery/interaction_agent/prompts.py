@@ -84,25 +84,27 @@ Input Generation Guidance:
   - Do not make any assumptions about how web applications should behave.
   - Generate the minimal amount of steps necessary to test the feature.
   - Keep the steps minimal and action-oriented.
+  - **Do not include multiple actions that result in navigation** Once a navigation action is performed (e.g., clicking a button that changes the page), the plan should not include further actions on the original page.
 
 Keep in mind that the page is already loaded, and you have access to the page soup.
 
 Example:
 
 Input:
-- URI: /login
+- URI: /register
 - Element:
-  {{"name": "Login Button", "description": "A button to login to the application"}}
-- Approach: Test the login form with username and password containing special characters.
+  {{"name": "Register Button", "description": "A button to complete the registration process"}}
+- Approach: Test the registration form with valid inputs for username and password.
 - Page Soup: HTML code of the page
 
 Output:
 - PlanModel:
-  - approach: Test the login form with username and password containing special characters.
+  - approach: Test the registration form with valid inputs for username and password.
   - plan:
-    - Fill in the username field with the text "special_username@#$%42"
-    - Fill in the password field with the text "special_password@#$%42"
-    - Click the login button
+    - Fill in the username field with the text "user_test_123"
+    - Fill in the password field with the text "SecurePass$123"
+    - Check the "agree to terms and conditions" checkbox
+    - Click the register button
 
 """
 
