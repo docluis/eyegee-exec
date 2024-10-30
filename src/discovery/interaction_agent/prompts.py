@@ -317,8 +317,8 @@ The page source difference before and after interaction:
 {page_source_diff}
 ```
 
-Reminder: Only generate a new plan if the new plan uncovers additional web-app surface area that was not covered by the previous plan.
-Do not treat the new plan as a way to correct mistakes in the previous plan. Only generate a new plan if the previous plan did not fully test the feature.
+Reminder: Generate a new plan if new inputs fields or elements have been discovered in the page source that require interaction to sufficiently test the feature.
+If no further interaction is needed, inform the user that the test is complete.
 """
 
 
