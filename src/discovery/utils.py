@@ -122,14 +122,23 @@ def format_steps(steps: List[CompletedTask]) -> str:
         output += f"\t- Status: {step.status}\n"
         output += f"\t- Result: {step.result}\n"
         output += f"\t- Tool history: {len(step.tool_history)}\n"
-        for tool_call in step.tool_history:
+        # only print the last tool call
+        if step.tool_history:
+            output += f"\t- Last Tool Call\n"
+            tool_call = step.tool_history[-1]
             output += f"\t\t- Tool call: {tool_call[0]}\n"
             output += f"\t\t- Input: {tool_call[1]}\n"
             output += f"\t\t- Output\n"
             output += f"\t\t\t- Success: {tool_call[2].success}\n"
             output += f"\t\t\t- Message: {tool_call[2].message}\n"
-            # output += f"\t\t\tError: {tool_call[2].error if tool_call[2].error else 'No error'}\n"
-            # dont print page source, outgoing requests
+        # for tool_call in step.tool_history:
+        #     output += f"\t\t- Tool call: {tool_call[0]}\n"
+        #     output += f"\t\t- Input: {tool_call[1]}\n"
+        #     output += f"\t\t- Output\n"
+        #     output += f"\t\t\t- Success: {tool_call[2].success}\n"
+        #     output += f"\t\t\t- Message: {tool_call[2].message}\n"
+        #     # output += f"\t\t\tError: {tool_call[2].error if tool_call[2].error else 'No error'}\n"
+        #     # dont print page source, outgoing requests
     return output
 
 def extract_uri(url:str) -> str:

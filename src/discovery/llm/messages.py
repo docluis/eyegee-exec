@@ -27,27 +27,27 @@ If there are multiple buttons or inputs with the same functionality, group them 
 
 If the page contains an interaction that was already parsed on a previous page, include it with the same name, description, and input_fields as before.
 
-If no interactions are found on a page, return an empty JSON array [].
+If no interactions are found on a page, return an empty array [].
 
 Example Output:
 [
-    {
-        "name": "Login Form",
-        "description": "A form that allows users to log into the website.",
-        "input_fields": [
+    InteractionModel(
+        name="Login Form",
+        description="A form that allows users to log into the website.",
+        input_fields=[
             {"name": "username", "type": "text"},
             {"name": "password", "type": "password"},
             {"name": "submit", "type": "button"}
         ]
-    },
-    {
-        "name": "Search Bar",
-        "description": "A bar where users can enter search queries.",
-        "input_fields": [
+    ),
+    InteractionModel(
+        name="Search Bar",
+        description="A bar where users can enter search queries.",
+        input_fields=[
             {"name": "search_query", "type": "text"},
             {"name": "search_button", "type": "button"}
         ]
-    }
+    )
 ]
 
 **Important Notes**:
