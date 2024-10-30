@@ -19,6 +19,18 @@ class ApiModelList(BaseModel):
 
     apis: List[ApiModel] = Field(description="The list of APIs")
 
+class InteractionModel(BaseModel):
+    """Model for an interaction"""
+
+    name: str = Field(description="The name of the interaction")
+    description: str = Field(description="The description of the interaction")
+    input_fields: List[Dict[str, str]] = Field(description="The input fields of the interaction")
+
+class InteractionModelList(BaseModel):
+    """Model for a list of interactions"""
+
+    interactions: List[InteractionModel] = Field(description="The list of interactions")
+
 
 class RankedInteraction(BaseModel):
     """Model for ranked interaction"""

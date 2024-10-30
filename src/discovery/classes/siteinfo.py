@@ -1,5 +1,5 @@
 import json
-from src.discovery.llm.model_classes import ApiModel
+from src.discovery.llm.model_classes import ApiModel, InteractionModel
 from src.discovery.classes.interaction import Interaction
 from src.discovery.classes.page import Page
 from src.discovery.classes.api import Api
@@ -86,7 +86,7 @@ class SiteInfo:
 
         return added_apis
 
-    def add_interactions(self, interactions: List[dict]) -> Tuple[List[str], bool]:
+    def add_interactions(self, interactions: List[InteractionModel]) -> Tuple[List[str], bool]:
         """
         Add the given list of interactions to the SiteInfo Object.
 
@@ -95,19 +95,19 @@ class SiteInfo:
         interaction_names = []
         new_interactions_added = False
         for interaction in interactions:
-            interaction_names.append(interaction["name"])
+            interaction_names.append(interaction.name)
             # check if the interaction already exists in self.interactions
             found = False
             for i in self.interactions:
-                if i.name == interaction["name"]:
+                if i.name == interaction.name:
                     found = True
                     break
             if not found:
                 new_interactions_added = True
                 interaction_obj = Interaction(
-                    interaction["name"],
-                    interaction["description"],
-                    interaction["input_fields"],  # json.loads?
+                    interaction.name,
+                    interaction.description,
+                    interaction.input_fields,
                 )
                 self.interactions.append(interaction_obj)
         return interaction_names, new_interactions_added

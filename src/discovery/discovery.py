@@ -166,7 +166,7 @@ def discover(cf: Config) -> SiteInfo:
 
             # TODO: handle this inside the agent (discover new interactions in same page with new soup)
             # if new_soup:  # Parse interactions if the page has changed
-            #     interactions = llm_interactionparser.parse_interactions(soup)
+            #     interactions = llm_interactionparser.parse_interactions(soup) # signature has changed
             #     interaction_names = si.add_interactions(interactions)
 
             #     for interaction_name in interaction_names:
