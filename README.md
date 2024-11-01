@@ -10,13 +10,11 @@ Results are presented as a graph, illustrating connections between pages, API ca
 
 > Note: Note: While eyegee-exec should be compatible with other vendors or local LLMs, it has been tested only with OpenAI's cloud models to date.
 
-## How to Run
-
-This tool requires the installation of the `ChromeDriver` application. On Arch Linux-based operating systems, it can be installed using AUR package managers. Please refer to the official [ChromeDriver documentation](https://developer.chrome.com/docs/chromedriver/get-started) for installation instructions on other operating systems.
+### Getting Started
 
 1. **Install ChromeDriver**
 
-Ensure ChromeDriver is installed on your system. This is required for the discovery process.
+Ensure [ChromeDriver](https://developer.chrome.com/docs/chromedriver/get-started) is installed on your system. This is required for the discovery process.
 
 2. **Install Node.js and npm**
 
@@ -36,7 +34,6 @@ pip install -r requirements.txt
 ```
 
 5. **Setup the Environment Variables**
-   Create a .env file and add your Open AI Key:
 
 ```bash
 touch .env
@@ -54,7 +51,7 @@ vim config.py
 ```
 
 7. **Execute the Discovery Module**
-   Run the discovery module to start mapping the web application:
+   Run the discovery module to start mapping a web application:
 
 ```bash
 python eyegee-exec.py -d -t http://localhost:80/
@@ -67,6 +64,12 @@ python eyegee-exec.py -d -t http://localhost:80/
 python eyegee-exec.py -g
 ```
 
-## Test this tool
+### Test this tool
 
 An example web application to test this tool can be accessed under: https://github.com/docluis/dentist or https://github.com/docluis/card_market
+
+### Credits & Motivation
+
+This tool was originally inspired by a [Blogpost](https://josephthacker.com/ai/2024/02/21/hackbots.html) by Joseph Thacker. The tool was developed to present an ethical non-intrusive approach to autonomous LLM-based security analysis. 
+
+Development of eyegee-exec was made possible through the Bundesnachrichtendienst’s “Summer of Code” scholarship program, which provided critical resources for this project.
