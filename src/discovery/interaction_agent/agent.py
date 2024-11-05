@@ -201,8 +201,8 @@ class InteractionAgent:
                         executor_log.update_task(i, j, "done")
                         live.update(executor_log.render_tasks())
                     # getting page source:
-                    originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-                    soup_after = filter_html(originial_soup)
+                    original_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+                    soup_after = filter_html(original_soup)
                     test.soup_after_str = soup_after.prettify()
                     # parsing page requests and filtering them with LLM
                     p_reqs = parse_apis(driver=self.cf.driver, target=self.cf.target, uri=uri, filtered=True)
@@ -343,8 +343,8 @@ class InteractionAgent:
         # initial steps: navigate and get soup
         self.cf.driver.get(f"{self.cf.target}{uri}")
         time.sleep(self.cf.selenium_rate)
-        originial_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
-        soup = filter_html(originial_soup).prettify()
+        original_soup = BeautifulSoup(self.cf.driver.page_source, "html.parser")
+        soup = filter_html(original_soup).prettify()
 
         final_state = self.app.invoke(
             input={"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit}

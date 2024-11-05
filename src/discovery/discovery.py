@@ -63,8 +63,8 @@ def discover(cf: Config) -> SiteInfo:
                     continue
                 time.sleep(cf.selenium_rate)
 
-                originial_soup = BeautifulSoup(cf.driver.page_source, "html.parser")
-                soup = filter_html(originial_soup)
+                original_soup = BeautifulSoup(cf.driver.page_source, "html.parser")
+                soup = filter_html(original_soup)
                 discovery_log.update_status("Loading Page", "done")
                 if si.check_if_visited(soup):
                     discovery_log.update_status("Discovering APIs", "skipped")
@@ -108,9 +108,9 @@ def discover(cf: Config) -> SiteInfo:
                 page = Page(
                     uri=uri,
                     title=soup.title.string if soup.title else None,
-                    original_soup=originial_soup,
+                    original_soup=original_soup,
                     summary=summary,
-                    outlinks=parse_links(originial_soup),
+                    outlinks=parse_links(original_soup),
                     interaction_names=interaction_names,
                     apis_called=apis_called_passive,
                 )
