@@ -141,6 +141,17 @@ def format_steps(steps: List[CompletedTask]) -> str:
         #     # dont print page source, outgoing requests
     return output
 
+def format_context(context: List[str]) -> str:
+    """
+    Format the given context.
+    """
+    if len(context) == 0:
+        return "No context provided"
+    output = ""
+    for item in context:
+        output += f"- {item}\n"
+    return output
+
 def extract_uri(url:str) -> str:
     """
     Extract the URI from the given URL.

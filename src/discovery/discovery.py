@@ -32,7 +32,7 @@ def discover(cf: Config) -> SiteInfo:
     print(Text("Starting discovery", style="bold green"))
     logger.debug("Starting discovery")
     si = SiteInfo(cf.target)
-    schuedule = Schedule(cf.target, cf.initial_path)
+    schedule = Schedule(cf.target, cf.initial_path)
 
     llm_summarizer = LLM_Summarizer(cf)
     llm_interactionparser = LLM_InteractionParser(cf)
@@ -41,11 +41,12 @@ def discover(cf: Config) -> SiteInfo:
     interaction_agent = InteractionAgent(cf, llm_page_request_parser)
 
     rerank_required = True
+    interaction_context = []
 
-    while schuedule.uris_todo or schuedule.interactions_todo:
-        schuedule.debug_print_schedule()
-        if schuedule.uris_todo:
-            uri = schuedule.next_uri()
+    while schedule.uris_todo or schedule.interactions_todo:
+        schedule.debug_print_schedule()
+        if schedule.uris_todo:
+            uri = schedule.next_uri()
             logger.debug(f"Discovering URI: {uri}")
             print(Text(f"\nDiscovering URI: {uri}", style="bold green"))
             discovery_log = DiscoveryLog()
@@ -115,28 +116,28 @@ def discover(cf: Config) -> SiteInfo:
                     apis_called=apis_called_passive,
                 )
 
-                schuedule.add_uris_to_todo(page.outlinks)
-                schuedule.add_interactions_to_todo(page.interaction_names)
+                schedule.add_uris_to_todo(page.outlinks)
+                schedule.add_interactions_to_todo(page.interaction_names)
 
                 si.add_page(page)
                 time.sleep(cf.selenium_rate)
             print(Text(f"Found Interactions: {", ".join(interaction_names)}"))
 
-        elif schuedule.interactions_todo:
+        elif schedule.interactions_todo:
             if rerank_required:
                 ranker_log = RankerLog()
                 with Live(refresh_per_second=10) as live:
                     print(Text("\nRanking Interactions", style="bold green"))
                     ranker_log.update_status("running")
                     live.update(ranker_log.render())
-                    interaction_names = [interaction for interaction, _ in schuedule.interactions_todo]
+                    interaction_names = [interaction for interaction, _ in schedule.interactions_todo]
                     ranked_interactions = llm_rank_interactions(cf, interaction_names)
                     logger.debug(f"Re-Ranked Interactions: {ranked_interactions}")
-                    schuedule.interactions_todo = ranked_interactions
+                    schedule.interactions_todo = ranked_interactions
                     rerank_required = False
                     ranker_log.update_status("done")
                     live.update(ranker_log.render())
-            interaction_name, interaction_limit = schuedule.next_interaction()
+            interaction_name, interaction_limit = schedule.next_interaction()
             if interaction_limit <= 0:
                 logger.debug(f"Skipping interaction {interaction_name} as limit is 0")
                 continue
@@ -148,11 +149,13 @@ def discover(cf: Config) -> SiteInfo:
             # behaviour, all_p_reqs, all_paths, new_soup = interaction_agent.interact(
             #     uri=uri, interaction=json.dumps(interaction.to_dict())
             # )
-            test_report, all_p_reqs_parsed, all_paths = interaction_agent.interact(
+            test_report, all_p_reqs_parsed, all_paths, new_interaction_context = interaction_agent.interact(
                 uri=uri,
                 interaction=json.dumps(interaction.to_dict()),
                 limit=str(interaction_limit),
+                interaction_context=interaction_context,
             )
+            interaction_context += new_interaction_context
 
             apis_called_interaction = si.add_apis(all_p_reqs_parsed) if len(all_p_reqs_parsed) > 0 else []
             si.add_apis(all_p_reqs_parsed)
@@ -162,7 +165,7 @@ def discover(cf: Config) -> SiteInfo:
             interaction.tested = True
 
             logger.debug(f"All paths: {all_paths}")
-            schuedule.add_uris_to_todo(all_paths)  # Add the new paths to the schedule
+            schedule.add_uris_to_todo(all_paths)  # Add the new paths to the schedule
 
             # TODO: handle this inside the agent (discover new interactions in same page with new soup)
             # if new_soup:  # Parse interactions if the page has changed

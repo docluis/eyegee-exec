@@ -25,7 +25,7 @@ from src.pretty_log import (
     HighLevelReplannerLog,
     ReporterLog,
 )
-from src.discovery.interaction_agent.classes import AnyInput, AnyOutput, ReplanModel
+from src.discovery.interaction_agent.classes import AnyInput, AnyOutput, ReplanModel, ReporterOutput
 
 from src.discovery.interaction_agent.tool_context import ToolContext
 from src.discovery.interaction_agent.tools.click import Click
@@ -37,7 +37,7 @@ from src.discovery.interaction_agent.tools.fill_date_field import FillDateField
 from src.discovery.interaction_agent.tools.get_outgoing_requests import GetOutgoingRequests
 from src.discovery.interaction_agent.tools.select_option import SelectOption
 from src.log import logger
-from src.discovery.utils import api_models_to_str, filter_html, format_steps, parse_apis
+from src.discovery.utils import api_models_to_str, filter_html, format_context, format_steps, parse_apis
 from src.discovery.interaction_agent.prompts import (
     high_high_level_planner_prompt,
     high_level_planner_prompt,
@@ -59,7 +59,7 @@ from rich.text import Text
 from rich import print
 
 
-class PlanExecute(TypedDict):
+class State(TypedDict):
     uri: str
     interaction: str
     page_soup: str
@@ -68,6 +68,8 @@ class PlanExecute(TypedDict):
     plans: List[PlanModel]
     tests: Annotated[List[TestModel], operator.add]
     report: str
+    interaction_context: List[str]
+    new_interaction_context: List[str]
     all_p_reqs_parsed: Annotated[List[ApiModel], operator.add]
     observed_uris: Annotated[List[str], operator.add]
 
@@ -92,7 +94,7 @@ class InteractionAgent:
         ]
 
     def _init_app(self):
-        def should_report(state: PlanExecute) -> Literal["executer", "reporter"]:
+        def should_report(state: State) -> Literal["executer", "reporter"]:
             if "plans" in state and state["plans"] == []:
                 return "reporter"
             else:
@@ -104,7 +106,7 @@ class InteractionAgent:
         high_level_planner = high_level_planner_prompt | self.cf.model.with_structured_output(PlanModel)
         high_level_replanner = high_level_replanner_prompt | self.cf.model.with_structured_output(Act)
 
-        def high_high_level_planner_step(state: PlanExecute):
+        def high_high_level_planner_step(state: State):
             print(Text("High High Level Planner Step", style="green"))
             high_high_level_planner_log = HighHighLevelPlannerLog()
             with Live(refresh_per_second=10) as live:
@@ -125,7 +127,7 @@ class InteractionAgent:
                 live.update(high_high_level_planner_log.render())
             return {"approaches": approaches.approaches}
 
-        def high_level_plan_step(state: PlanExecute):
+        def high_level_plan_step(state: State):
             print(Text("High Level Planner Step", style="green"))
             plans = []
             with Live(refresh_per_second=10) as live:
@@ -139,6 +141,7 @@ class InteractionAgent:
                             "interaction": state["interaction"],
                             "page_soup": state["page_soup"],
                             "approach": approach,
+                            "interaction_context": format_context(state["interaction_context"]),
                         }
                     )
                     plans.append(plan)
@@ -147,7 +150,7 @@ class InteractionAgent:
 
             return {"plans": plans}
 
-        def execute_step(state: PlanExecute):
+        def execute_step(state: State):
             print(Text("Execute Step", style="green"))
             tests = []
             all_p_reqs_parsed = []
@@ -221,7 +224,7 @@ class InteractionAgent:
                 "observed_uris": state["observed_uris"] + observed_uris,
             }
 
-        def high_level_replan_step(state: PlanExecute):
+        def high_level_replan_step(state: State):
             """
             Loops over all tests in current state and decides if a new plan is needed for each test.
             """
@@ -257,7 +260,7 @@ class InteractionAgent:
 
                     decision = high_level_replanner.invoke(input=input)
                     if isinstance(decision.action, ReplanModel):
-                        logger.debug(f"Descision: New plan is needed")
+                        logger.debug(f"Decision: New plan is needed")
                         logger.debug(f"New Steps: {decision.action.new_steps}")
                         high_level_replanner_log.update_test(i, "done", "New plan!")
                         live.update(high_level_replanner_log.render())
@@ -270,20 +273,21 @@ class InteractionAgent:
                     elif isinstance(decision.action, Response):
                         high_level_replanner_log.update_test(i, "done", "No new plan is needed")
                         live.update(high_level_replanner_log.render())
-                        logger.debug(f"Descision: No new plan is needed")
+                        logger.debug(f"Decision: No new plan is needed")
                         logger.debug(f"Response: {decision.action.text}")
                         test.checked = True
                         test.in_report = True
                         tests_checked.append(test)
             return {"tests": tests_checked, "plans": new_plans}
 
-        def report_step(state: PlanExecute):
+        def report_step(state: State):
             print(Text("Report Step", style="green"))
             reporter_log = ReporterLog()
             with Live(refresh_per_second=10) as live:
                 reporter_log.update_status("running")
                 live.update(reporter_log.render())
                 logger.debug(f"Report step")
+
                 interaction = json.dumps(state["interaction"], indent=4)
                 uri = state["uri"]
                 messages = [
@@ -314,15 +318,15 @@ class InteractionAgent:
                 messages.append(("placeholder", "{messages}"))
 
                 reporter_prompt = ChatPromptTemplate.from_messages(messages)
-                reporter = reporter_prompt | self.cf.advanced_model | self.cf.parser
+                reporter = reporter_prompt | self.cf.advanced_model.with_structured_output(ReporterOutput)
 
-                report = reporter.invoke(input={})
-                logger.debug(f"Report:\n{report}")
+                out = reporter.invoke(input={})
+                logger.debug(f"Report:\n{out.report}")
                 reporter_log.update_status("done")
                 live.update(reporter_log.render())
-            return {"report": report}
+            return {"report": out.report, "new_interaction_context": out.new_interaction_context}
 
-        workflow = StateGraph(PlanExecute)
+        workflow = StateGraph(State)
         workflow.add_node("high_high_level_planner", high_high_level_planner_step)
         workflow.add_node("high_level_planner", high_level_plan_step)
         workflow.add_node("executer", execute_step)
@@ -339,7 +343,7 @@ class InteractionAgent:
 
         return app
 
-    def interact(self, uri: str, interaction: str, limit: str = "3") -> Tuple[str, List[ApiModel], List[str]]:
+    def interact(self, uri: str, interaction: str, limit: str = "3", interaction_context: List[str] = []) -> Tuple[str, List[ApiModel], List[str], List[str]]:
         # initial steps: navigate and get soup
         self.cf.driver.get(f"{self.cf.target}{uri}")
         time.sleep(self.cf.selenium_rate)
@@ -347,7 +351,18 @@ class InteractionAgent:
         soup = filter_html(original_soup).prettify()
 
         final_state = self.app.invoke(
-            input={"interaction": interaction, "uri": uri, "page_soup": soup, "limit": limit}
+            input={
+                "interaction": interaction,
+                "uri": uri,
+                "page_soup": soup,
+                "limit": limit,
+                "interaction_context": interaction_context,
+            }
         )
 
-        return final_state["report"], final_state["all_p_reqs_parsed"], final_state["observed_uris"]
+        return (
+            final_state["report"],
+            final_state["all_p_reqs_parsed"],
+            final_state["observed_uris"],
+            final_state["interaction_context"],
+        )

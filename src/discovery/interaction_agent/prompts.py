@@ -88,14 +88,17 @@ Input Generation Guidance:
 
 Keep in mind that the page is already loaded, and you have access to the page soup.
 
-Example:
+Examples:
+
+Example 1:
 
 Input:
 - URI: /register
 - Element:
-  {{"name": "Register Button", "description": "A button to complete the registration process"}}
+  {{"name": "Register Form", "description": "A form to register a new user"}}
 - Approach: Test the registration form with valid inputs for username and password.
 - Page Soup: HTML code of the page
+- Context: -
 
 Output:
 - PlanModel:
@@ -106,6 +109,24 @@ Output:
     - Check the "agree to terms and conditions" checkbox
     - Click the register button
 
+Example 2:
+
+Input:
+- URI: /login
+- Element:
+  {{"name": "Login Form", "description": "A form to log in to the application"}}
+- Approach: Test the login form with valid inputs.
+- Page Soup: HTML code of the page
+- Context: user_test_123:SecurePass$123 are valid credentials
+
+Output:
+- PlanModel:
+  - approach: Test the login form with valid inputs.
+  - plan:
+    - Fill in the username field with the text "user_test_123"
+    - Fill in the password field with the text "SecurePass$123"
+    - Click the login button
+
 """
 
 human_high_level_planner_prompt = """
@@ -115,7 +136,12 @@ human_high_level_planner_prompt = """
 *Approach*:
 {approach}
 *Page Soup*:
+```
 {page_soup}
+```
+
+*Context*:
+{interaction_context}
 
 """
 
@@ -333,12 +359,15 @@ system_reporter_prompt = """
 You are a professional web tester assigned to evaluate a specific feature on a web application page.
 
 Your task is to create a detailed, aggregated report of the feature's performance, highlighting key behavior and any issues found during testing.
+Additionally you must decide what information should be passed to future interaction tests. Include this information in the new_interaction_context field.
 
 **Important**:
   - Summarize how the feature behaves across different tests and describe how the element functions and the server's response from the client side.
   - Pay attention to any outgoing requests, including their details, and document any differences or patterns observed.
   - Report unusual behaviors or errors found during testing.
   - Keep the report brief and focused on key findings and issues.
+  - Only return important and *complete* context information that will be useful for future interactions.
+  - For example, if a registration successfully completes, the context information should include the username and password used for the registration: "Valid user credentials: username: user_test_123, password: SecurePass$123"
 
 The tested feature is: **{interaction}**
 
@@ -366,7 +395,5 @@ The following outgoing requests were observed during this interaction:
 ### Page Source Changes:
 Comparing the page source before and after the interaction, the following differences were noted:
 {page_source_diff}
-
----
 
 """

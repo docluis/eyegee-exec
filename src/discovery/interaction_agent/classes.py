@@ -131,6 +131,7 @@ class PlanModel(BaseModel):
     approach: str = Field(description="The approach for the interaction feature.")
     plan: List[str] = Field(description="The step-by-step plan for this approach.")
 
+
 class ReplanModel(BaseModel):
     """Model for representing the replan for a single approach."""
 
@@ -173,4 +174,14 @@ class Act(BaseModel):
     action: Union[Response, ReplanModel] = Field(
         description="Action to perform. If you want to respond to user, send a Response text. \n"
         "If you would like to provide a new, updated plan, use ReplanModel."
+    )
+
+
+class ReporterOutput(BaseModel):
+    """Output from the reporter."""
+
+    report: str = Field(description="The final report in markdown format.")
+    new_interaction_context: List[str] = Field(
+        description="Any valuable information to add to the context useful for future interactions. \n"
+        "Only add necessary information, keep each item short and concise."
     )
