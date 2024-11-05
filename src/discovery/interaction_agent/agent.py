@@ -364,5 +364,5 @@ class InteractionAgent:
             final_state["report"],
             final_state["all_p_reqs_parsed"],
             final_state["observed_uris"],
-            final_state["interaction_context"],
+            final_state["new_interaction_context"],
         )
